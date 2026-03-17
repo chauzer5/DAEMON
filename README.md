@@ -5,7 +5,7 @@
 <h3 align="center">Distributed Autonomous Engineering Management Orchestration Node</h3>
 
 <p align="center">
-  A Cyberpunk 2077-themed productivity dashboard that unifies Slack, GitLab, Linear, and AI agent teams into a single command center.
+  A themeable productivity dashboard that unifies Slack, GitLab, Linear, and AI agent teams into a single command center — with swappable visual themes from Cyberpunk 2077 to Star Trek LCARS.
 </p>
 
 <p align="center">
@@ -16,27 +16,39 @@
 
 ## What is D.A.E.M.O.N.?
 
-D.A.E.M.O.N. is a native macOS desktop app that replaces tab-switching between Slack, GitLab, Linear, and your terminal. Everything you need to manage a dev team lives in one synthwave-themed HUD.
+D.A.E.M.O.N. is a native macOS desktop app that replaces tab-switching between Slack, GitLab, Linear, and your terminal. Everything you need to manage a dev team lives in one interface — styled however you want.
+
+### Themes
+
+Switch the entire visual experience on the fly via Settings (`Cmd+,`):
+
+| Theme | Style | Boot Animation |
+|-------|-------|----------------|
+| **Cyberpunk 2077** | Neon glows, scanlines, glitch text, data streams, floating particles | Terminal BIOS POST → logo grow → fade to dashboard |
+| **Star Trek: TNG** | LCARS panels with L-frames, curved elbows, segmented colored bars, flat/clean | Starfield → LCARS boot text → bars assemble from edges |
+| **Star Trek: TOS** | Command gold, science blue, engineering red on dark navy | Starfield → Federation boot sequence |
+
+Themes change **everything** — colors, layout structure, fonts, boot animation, HUD decorations, status bar, panel shapes, and logos. See [THEMES.md](THEMES.md) for how to create your own.
 
 ### Panels
 
 | Panel | What it does |
 |-------|-------------|
-| **Slack** | Monitors specific channels, searches for comms-related messages in #engineering and #customer-issues, shows @mentions. Unread highlighting with read-on-click. |
-| **GitLab MRs** | Team / Needs Your Approval / Mentions / My MRs tabs. Click into full MR detail view with pipeline visualization, approval status, discussions, merge button, and job play/retry. |
-| **Linear** | Mine / Team / Ready tabs. Click into full ticket detail view with rendered markdown descriptions, comments, and inline commenting. |
-| **Agent Teams** | 6 organized command teams that launch Claude Code skills directly. Research & Ask chat box for freeform questions. Streaming output. |
+| **Slack** | Monitors specific channels, searches for comms-related messages, shows @mentions. Unread highlighting with read-on-click. Auto-resolves user IDs to names. |
+| **GitLab MRs** | Team / Needs Your Approval / Mentions / My MRs tabs. Full MR detail view with pipeline visualization (hover for jobs, click to play/retry), approval rules, threaded discussions, merge button, and commenting. |
+| **Linear** | Mine / Team / Ready tabs. Full ticket detail with rendered markdown, comments, and inline commenting back to Linear. |
+| **Agent Teams** | 6 command teams launching Claude Code skills. Research & Ask chat box for freeform questions. Streaming output from `claude --print`. |
+
+All panels are **closeable and reopenable** via the header bar toggle buttons.
 
 ### Features
 
+- **Theme engine** — swap entire visual identity on the fly (Cyberpunk, Star Trek TNG, Star Trek TOS)
 - **Native macOS notifications** for new team MRs, approval requests, and @mentions
-- **Closeable/reopenable panels** via header bar toggles
-- **Full MR detail view** — pipeline stages (hover for jobs, click to play/retry), approval rules, threaded discussions, merge button, comment input
-- **Full ticket detail view** — markdown rendering, comments, inline commenting to Linear
-- **Boot sequence** — configurable dramatic Cyberpunk terminal startup (3-15 seconds, or skip entirely)
-- **Cyberpunk HUD effects** — animated border traces, glitch text, data streams, floating particles, scanlines, vignette, scrolling data ticker
+- **Configurable boot sequence** — dramatic startup animation (3-15 seconds, adjustable per theme, or skip entirely)
+- **Replay boot** — `Cmd+Shift+B` to rewatch the boot animation anytime
 - **Slack credential extraction** — auto-extracts tokens from the Slack desktop app (no OAuth setup needed)
-- **Settings via Cmd+,** — configure API keys, test connections, adjust boot animation
+- **Settings via Cmd+,** or macOS menu bar — API keys, theme selection, boot animation settings
 - **Native macOS window controls** — traffic lights, fullscreen to its own Space, minimize to Dock
 
 ---
@@ -96,7 +108,7 @@ The first build compiles ~450 Rust crates and takes 3-5 minutes. Subsequent buil
 npm run tauri build
 ```
 
-This produces `DAEMON.app` in `src-tauri/target/release/bundle/macos/`. Drag it to `/Applications` — it appears in Launchpad and the Dock like any native app (~15MB).
+This produces `D.A.E.M.O.N..app` in `src-tauri/target/release/bundle/macos/`. Drag it to `/Applications` — it appears in Launchpad and the Dock like any native app (~15MB).
 
 ---
 
@@ -111,9 +123,10 @@ LINEAR_API_KEY=lin_api_your-key-here
 
 ### Settings UI (`Cmd+,`)
 
-- **API Credentials** — View masked keys, update, test connections
-- **Boot Sequence** — Enable/disable, adjust duration slider (3-15 seconds)
-- **Slack** — Auto-configured from desktop app (no manual setup)
+- **Theme** — switch between Cyberpunk 2077, Star Trek TNG, Star Trek TOS
+- **API Credentials** — view masked keys, update, test connections
+- **Boot Sequence** — enable/disable, adjust duration slider (3-15 seconds)
+- **Slack** — auto-configured from desktop app (no manual setup)
 
 ### Customization
 
@@ -143,7 +156,7 @@ These are currently hardcoded — edit the source to match your setup:
 │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └───────┬─────────┘ │
 │       │            │            │                │           │
 │  ┌────┴────────────┴────────────┴────────────────┴────────┐  │
-│  │              TanStack Query (polling + cache)           │  │
+│  │     TanStack Query (polling + cache) + Theme Engine     │  │
 │  └────────────────────────┬───────────────────────────────┘  │
 │                           │ invoke()                         │
 ├───────────────────────────┼──────────────────────────────────┤
@@ -167,11 +180,23 @@ These are currently hardcoded — edit the source to match your setup:
 | Desktop runtime | Tauri v2 | Native, ~15MB (vs Electron's 150MB+) |
 | Frontend | React 18 + TypeScript + Vite | Standard, sub-second HMR |
 | Data fetching | TanStack Query | Built-in polling, caching, deduplication |
-| Styling | CSS Modules + Custom Properties | Synthwave needs custom glows, not utility CSS |
-| Fonts | Orbitron + Rajdhani + JetBrains Mono | Self-hosted via @fontsource, zero network calls |
+| Styling | CSS Modules + Custom Properties | Theme engine swaps CSS vars at runtime |
+| Fonts | Orbitron + Rajdhani + Antonio + JetBrains Mono | Self-hosted via @fontsource |
 | Rust HTTP | reqwest | All API calls through Rust for security |
 | Slack auth | Python + cryptography | Decrypts tokens from Slack's local storage |
 | AI | Claude CLI | Spawned as subprocess, output streamed via Tauri events |
+
+### Theme Engine
+
+The theme engine supports complete visual overhauls — not just color swaps, but entirely different layouts:
+
+- **CSS variables** applied to `:root` at runtime (colors, backgrounds, accents, glows, fonts)
+- **Layout styles** (`cyberpunk`, `lcars`, `trek-tos`) change component structure via conditional rendering
+- **Boot sequences** per theme with tiered text (short/medium/long), theme-specific animations
+- **HUD decorations**, status bar text, and data stream characters per theme
+- **Theme-specific logos** that swap in the title bar and boot screen
+
+See [THEMES.md](THEMES.md) for the full guide to creating custom themes.
 
 ### Security Model
 
@@ -199,6 +224,13 @@ Instead of requiring a Slack app with OAuth scopes (which needs workspace admin 
 DAEMON/
 ├── src/                          # React frontend
 │   ├── theme/                    # variables.css, globals.css, animations.css, fonts.css
+│   ├── themes/                   # Theme engine
+│   │   ├── types.ts              # ThemeDefinition interface
+│   │   ├── ThemeProvider.tsx      # React context + CSS variable application
+│   │   ├── cyberpunk.ts          # Cyberpunk 2077 theme
+│   │   ├── trek-tng.ts           # Star Trek TNG (LCARS) theme
+│   │   ├── trek-tos.ts           # Star Trek TOS theme
+│   │   └── index.ts              # Theme registry
 │   ├── components/
 │   │   ├── layout/               # TitleBar, StatusBar, Panel, DashboardGrid, ScanlineOverlay, EmptySlot
 │   │   └── ui/                   # GlowCard, NeonButton, RetroLoader, BootSequence, SettingsModal, HudDecorations
@@ -207,20 +239,31 @@ DAEMON/
 │   │   ├── gitlab/               # GitLabPanel + MRDetailView — pipeline, merge, comments
 │   │   ├── linear/               # LinearPanel — detail view, markdown, commenting
 │   │   └── agents/               # AgentsPanel — command teams, Claude CLI runner
-│   ├── hooks/                    # TanStack Query hooks (useSlackSections, useMergeRequests, etc.)
-│   ├── services/                 # tauri-bridge.ts (typed invoke wrappers), notifications.ts
-│   └── types/                    # TypeScript interfaces matching Rust models
+│   ├── hooks/                    # TanStack Query hooks
+│   ├── services/                 # tauri-bridge.ts, notifications.ts
+│   └── types/                    # TypeScript interfaces
 ├── src-tauri/                    # Rust backend
 │   ├── src/
 │   │   ├── commands/             # slack.rs, gitlab.rs, linear.rs, agent.rs, settings.rs
 │   │   ├── services/             # credentials.rs, gitlab.rs, linear.rs, slack.rs
-│   │   └── models/               # Rust types with serde Serialize/Deserialize
+│   │   └── models/               # Rust types with serde
 │   ├── scripts/slack_creds.py    # Slack credential extractor
 │   └── Cargo.toml
-├── public/assets/                # Logo images
+├── public/assets/                # Theme logos and icons
 ├── .env                          # API keys (gitignored)
+├── THEMES.md                     # Theme creation guide
 └── package.json
 ```
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+,` | Open Settings |
+| `Cmd+Shift+B` | Replay boot animation |
+| `Cmd+Q` | Quit |
 
 ---
 
@@ -244,14 +287,15 @@ npm run tauri build
 
 ## Roadmap
 
+- [ ] More themes (Star Wars, Retrowave, true Synthwave)
 - [ ] Reminders & to-dos from Slack messages and MRs
 - [ ] AI-suggested action items from unread messages
 - [ ] Drag-and-drop panel arrangement
 - [ ] Additional panel types (Calendar, Datadog, etc.)
 - [ ] Anthropic API integration for in-app AI (no CLI dependency)
 - [ ] Custom channel/team configuration via Settings UI
-- [ ] Keyboard shortcuts for panel navigation
-- [ ] Custom app icon with transparent background
+- [ ] Theme-specific macOS dock icons that swap with the theme
+- [ ] Red Alert mode (Star Trek themes)
 
 ---
 
