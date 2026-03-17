@@ -14,6 +14,16 @@ pub struct Viewer {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct TeamMembersData {
+    pub team: TeamWithMembers,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TeamWithMembers {
+    pub members: MemberConnection,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct TeamIssuesData {
     pub team: TeamWithIssues,
 }

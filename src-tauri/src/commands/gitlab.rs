@@ -1,8 +1,13 @@
 use crate::models::gitlab::{EnrichedMergeRequest, MergeRequest, MergeRequestRaw};
+use crate::models::linear::TeamMembersData;
 use crate::services::credentials;
 use crate::services::gitlab::GitLabClient;
+use crate::services::linear::LinearClient;
 
 const NECTARHR_GROUP_ID: u64 = 12742924;
+
+/// COM team ID in Linear (same as in linear.rs)
+const COM_TEAM_ID: &str = "d097c0ee-3414-4d3e-9ff9-56017012a45a";
 
 
 fn get_token() -> Result<String, String> {
@@ -60,27 +65,29 @@ pub async fn get_merge_requests() -> Result<Vec<EnrichedMergeRequest>, String> {
 
     let mrs: Vec<MergeRequest> = raw_mrs.into_iter().map(MergeRequest::from).collect();
 
-    // Fetch group members to determine team membership dynamically
-    let group_members: Vec<crate::models::gitlab::GitLabUser> = http
-        .get(format!(
-            "https://gitlab.com/api/v4/groups/{NECTARHR_GROUP_ID}/members/all"
-        ))
-        .query(&[("per_page", "100")])
-        .send()
-        .await
-        .map_err(|e| format!("Failed to fetch group members: {e}"))?
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse group members: {e}"))?;
-
-    let team_usernames: std::collections::HashSet<String> = group_members
-        .iter()
-        .map(|m| m.username.clone())
-        .collect();
+    // Fetch team member names from Linear (source of truth for the team)
+    let team_names: std::collections::HashSet<String> = match credentials::get_credential("linear_api_key") {
+        Ok(Some(key)) => {
+            if let Ok(linear) = LinearClient::new(&key) {
+                let query = format!(
+                    r#"{{ team(id: "{}") {{ members {{ nodes {{ id name }} }} }} }}"#,
+                    COM_TEAM_ID
+                );
+                if let Ok(data) = linear.query::<TeamMembersData>(&query).await {
+                    data.team.members.nodes.into_iter().map(|m| m.name).collect()
+                } else {
+                    std::collections::HashSet::new()
+                }
+            } else {
+                std::collections::HashSet::new()
+            }
+        }
+        _ => std::collections::HashSet::new(),
+    };
 
     // Enrich each MR — share the same HTTP client, use semaphore for rate limiting
     let http = std::sync::Arc::new(http);
-    let team_usernames = std::sync::Arc::new(team_usernames);
+    let team_names = std::sync::Arc::new(team_names);
     let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(5));
     let mut handles = Vec::new();
 
@@ -88,7 +95,7 @@ pub async fn get_merge_requests() -> Result<Vec<EnrichedMergeRequest>, String> {
         let http = http.clone();
         let sem = semaphore.clone();
         let uname = username.clone();
-        let team = team_usernames.clone();
+        let team = team_names.clone();
 
         let handle = tokio::spawn(async move {
             let _permit = sem.acquire().await.unwrap();
@@ -121,7 +128,7 @@ async fn enrich_mr(
     mr: MergeRequest,
     user_id: u64,
     username: &str,
-    team_usernames: &std::collections::HashSet<String>,
+    team_names: &std::collections::HashSet<String>,
 ) -> Result<EnrichedMergeRequest, String> {
     let project_id = mr.project_id;
     let mr_iid = mr.iid;
@@ -176,7 +183,7 @@ async fn enrich_mr(
         .any(|note| !note.system && note.body.contains(&mention_pattern));
 
     let is_mine = mr.author_username.eq_ignore_ascii_case(username);
-    let is_team_member = !is_mine && team_usernames.contains(&mr.author_username);
+    let is_team_member = !is_mine && team_names.contains(&mr.author);
 
     Ok(EnrichedMergeRequest {
         mr,
