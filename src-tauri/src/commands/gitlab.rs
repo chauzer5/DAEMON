@@ -4,14 +4,6 @@ use crate::services::gitlab::GitLabClient;
 
 const NECTARHR_GROUP_ID: u64 = 12742924;
 
-/// AJ's direct team members (GitLab usernames)
-const TEAM_USERNAMES: &[&str] = &[
-    "ajholloway34",  // AJ Holloway (you)
-    "Enrique704",    // Eric Johnson
-    "riley8684116",  // Riley Reed
-    "keanna",        // Keanna Lund
-    "aaron.heo",     // Aaron Heo
-];
 
 fn get_token() -> Result<String, String> {
     credentials::get_credential("gitlab_pat")?
@@ -68,8 +60,27 @@ pub async fn get_merge_requests() -> Result<Vec<EnrichedMergeRequest>, String> {
 
     let mrs: Vec<MergeRequest> = raw_mrs.into_iter().map(MergeRequest::from).collect();
 
+    // Fetch group members to determine team membership dynamically
+    let group_members: Vec<crate::models::gitlab::GitLabUser> = http
+        .get(format!(
+            "https://gitlab.com/api/v4/groups/{NECTARHR_GROUP_ID}/members/all"
+        ))
+        .query(&[("per_page", "100")])
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch group members: {e}"))?
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse group members: {e}"))?;
+
+    let team_usernames: std::collections::HashSet<String> = group_members
+        .iter()
+        .map(|m| m.username.clone())
+        .collect();
+
     // Enrich each MR — share the same HTTP client, use semaphore for rate limiting
     let http = std::sync::Arc::new(http);
+    let team_usernames = std::sync::Arc::new(team_usernames);
     let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(5));
     let mut handles = Vec::new();
 
@@ -77,10 +88,11 @@ pub async fn get_merge_requests() -> Result<Vec<EnrichedMergeRequest>, String> {
         let http = http.clone();
         let sem = semaphore.clone();
         let uname = username.clone();
+        let team = team_usernames.clone();
 
         let handle = tokio::spawn(async move {
             let _permit = sem.acquire().await.unwrap();
-            enrich_mr(&http, mr, user_id, &uname).await
+            enrich_mr(&http, mr, user_id, &uname, &team).await
         });
         handles.push(handle);
     }
@@ -109,6 +121,7 @@ async fn enrich_mr(
     mr: MergeRequest,
     user_id: u64,
     username: &str,
+    team_usernames: &std::collections::HashSet<String>,
 ) -> Result<EnrichedMergeRequest, String> {
     let project_id = mr.project_id;
     let mr_iid = mr.iid;
@@ -162,12 +175,12 @@ async fn enrich_mr(
         .iter()
         .any(|note| !note.system && note.body.contains(&mention_pattern));
 
-    let is_team_member = TEAM_USERNAMES
-        .iter()
-        .any(|&u| u.eq_ignore_ascii_case(&mr.author_username));
+    let is_mine = mr.author_username.eq_ignore_ascii_case(username);
+    let is_team_member = !is_mine && team_usernames.contains(&mr.author_username);
 
     Ok(EnrichedMergeRequest {
         mr,
+        is_mine,
         is_team_member,
         needs_your_approval,
         approval_rules_needing_you,

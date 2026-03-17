@@ -112,6 +112,8 @@
     drop-shadow(0 0 20px rgba(0, 255, 245, 0.2));
   -webkit-app-region: no-drag;
   transform: translate(15%, -38%);
+  pointer-events: none;
+  user-select: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -210,4 +212,6 @@
   filter: none;
   -webkit-app-region: no-drag;
   transform: translate(15%, -38%);
+  pointer-events: none;
+  user-select: none;
 }

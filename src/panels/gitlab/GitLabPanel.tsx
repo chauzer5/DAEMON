@@ -91,7 +91,7 @@ function MRCard({ mr, onSelect }: { mr: EnrichedMergeRequest; onSelect: () => vo
 }
 
 export function GitLabPanel() {
-  const [tab, setTab] = useState<Tab>("team");
+  const [tab, setTab] = useState<Tab>("mine");
   const [selectedMR, setSelectedMR] = useState<{ projectId: number; iid: number } | null>(null);
   const { data: allMRs, isLoading, isError, error, refetch } = useMergeRequests();
 
@@ -101,7 +101,7 @@ export function GitLabPanel() {
       teamMRs: allMRs.filter((mr) => mr.is_team_member),
       approvalMRs: allMRs.filter((mr) => mr.needs_your_approval),
       mentionMRs: allMRs.filter((mr) => mr.you_are_mentioned),
-      myMRs: allMRs.filter((mr) => mr.author_username === "ajholloway34"),
+      myMRs: allMRs.filter((mr) => mr.is_mine),
     };
   }, [allMRs]);
 
@@ -132,6 +132,13 @@ export function GitLabPanel() {
     <Panel title="GitLab MRs" icon={GitMerge} badge={badge}>
       <div className={styles.tabs}>
         <button
+          className={`${styles.tab} ${tab === "mine" ? styles.tabActive : ""}`}
+          onClick={() => setTab("mine")}
+        >
+          Mine
+          <span className={styles.tabBadge}>{myMRs.length}</span>
+        </button>
+        <button
           className={`${styles.tab} ${tab === "team" ? styles.tabActive : ""}`}
           onClick={() => setTab("team")}
         >
@@ -151,13 +158,6 @@ export function GitLabPanel() {
         >
           Mentions
           <span className={styles.tabBadge}>{mentionMRs.length}</span>
-        </button>
-        <button
-          className={`${styles.tab} ${tab === "mine" ? styles.tabActive : ""}`}
-          onClick={() => setTab("mine")}
-        >
-          Mine
-          <span className={styles.tabBadge}>{myMRs.length}</span>
         </button>
       </div>
 

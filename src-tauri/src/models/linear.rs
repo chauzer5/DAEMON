@@ -20,7 +20,13 @@ pub struct TeamIssuesData {
 
 #[derive(Debug, Deserialize)]
 pub struct TeamWithIssues {
+    pub members: MemberConnection,
     pub issues: IssueConnection,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MemberConnection {
+    pub nodes: Vec<UserRef>,
 }
 
 #[derive(Debug, Deserialize)]

@@ -37,6 +37,7 @@ export interface MergeRequest {
 }
 
 export interface EnrichedMergeRequest extends MergeRequest {
+  is_mine: boolean;
   is_team_member: boolean;
   needs_your_approval: boolean;
   approval_rules_needing_you: string[];

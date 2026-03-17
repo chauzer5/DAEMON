@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { listen } from "@tauri-apps/api/event";
 import "./theme/globals.css";
@@ -79,7 +79,7 @@ function App() {
             zIndex: 1,
           }}
         >
-          <TitleBar openPanels={openPanels} onTogglePanel={togglePanel} />
+          <TitleBar openPanels={openPanels} onTogglePanel={togglePanel} onResync={() => queryClient.invalidateQueries()} />
           <DashboardGrid>
             {PANEL_ORDER.map((id) => {
               if (openPanels.has(id)) {

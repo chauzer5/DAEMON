@@ -135,6 +135,7 @@ pub struct MergeRequestNote {
 pub struct EnrichedMergeRequest {
     #[serde(flatten)]
     pub mr: MergeRequest,
+    pub is_mine: bool,
     pub is_team_member: bool,
     pub needs_your_approval: bool,
     pub approval_rules_needing_you: Vec<String>,

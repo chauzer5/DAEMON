@@ -1,4 +1,4 @@
-import { MessageSquare, GitMerge, Bot, LayoutList } from "lucide-react";
+import { MessageSquare, GitMerge, Bot, LayoutList, RefreshCw } from "lucide-react";
 import styles from "./TitleBar.module.css";
 import { useTheme } from "../../themes";
 
@@ -7,6 +7,7 @@ export type PanelId = "slack" | "gitlab" | "agents" | "linear";
 interface TitleBarProps {
   openPanels: Set<PanelId>;
   onTogglePanel: (id: PanelId) => void;
+  onResync: () => void;
 }
 
 const PANELS: { id: PanelId; label: string; icon: typeof MessageSquare }[] = [
@@ -19,7 +20,7 @@ const PANELS: { id: PanelId; label: string; icon: typeof MessageSquare }[] = [
 /** LCARS button color: muted, uniform — content over chrome */
 const LCARS_BUTTON_COLORS = ["#ff9933", "#9999ff", "#9966cc", "#cc9966"];
 
-export function TitleBar({ openPanels, onTogglePanel }: TitleBarProps) {
+export function TitleBar({ openPanels, onTogglePanel, onResync }: TitleBarProps) {
   const { theme } = useTheme();
   const isLcars = theme.layoutStyle === "lcars";
 
@@ -28,6 +29,18 @@ export function TitleBar({ openPanels, onTogglePanel }: TitleBarProps) {
       <div className={styles.titleBarLcars} data-tauri-drag-region>
         {/* Smaller curved elbow on the left */}
         <div className={styles.lcarsElbow} data-tauri-drag-region />
+
+        {/* Resync button */}
+        <div className={styles.panelTogglesLcars}>
+          <button
+            className={styles.panelToggleLcars}
+            onClick={onResync}
+            title="Resync all panels"
+            style={{ "--lcars-btn-color": "#33cc99" } as React.CSSProperties}
+          >
+            <RefreshCw size={12} />
+          </button>
+        </div>
 
         {/* Simplified bar: elbow color, toggles, fill, pill end */}
         <div className={styles.lcarsBarSegments} data-tauri-drag-region>
@@ -69,8 +82,15 @@ export function TitleBar({ openPanels, onTogglePanel }: TitleBarProps) {
 
   return (
     <div className={styles.titleBar} data-tauri-drag-region>
-      {/* Panel toggle buttons — left side */}
+      {/* Resync + Panel toggle buttons — left side */}
       <div className={styles.panelToggles}>
+        <button
+          className={styles.panelToggle}
+          onClick={onResync}
+          title="Resync all panels"
+        >
+          <RefreshCw size={13} />
+        </button>
         {PANELS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}

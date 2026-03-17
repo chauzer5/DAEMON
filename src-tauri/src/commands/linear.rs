@@ -5,14 +5,6 @@ use crate::services::linear::LinearClient;
 /// COM team ID in Linear
 const COM_TEAM_ID: &str = "d097c0ee-3414-4d3e-9ff9-56017012a45a";
 
-/// AJ's direct reports (Linear display names)
-const TEAM_MEMBERS: &[&str] = &[
-    "AJ Holloway",
-    "Eric Johnson",
-    "Riley Reed",
-    "Keanna Lund",
-    "Aaron Heo",
-];
 
 fn get_client() -> Result<LinearClient, String> {
     let key = credentials::get_credential("linear_api_key")?
@@ -52,6 +44,9 @@ pub async fn get_issues() -> Result<Vec<LinearIssue>, String> {
     let team_query = format!(
         r#"{{
             team(id: "{}") {{
+                members {{
+                    nodes {{ id name }}
+                }}
                 issues(
                     first: 50
                     orderBy: updatedAt
@@ -71,6 +66,24 @@ pub async fn get_issues() -> Result<Vec<LinearIssue>, String> {
         COM_TEAM_ID
     );
     let team_issues: TeamIssuesData = client.query(&team_query).await?;
+
+    // Build team member names from the API response
+    let team_member_names: std::collections::HashSet<String> = team_issues
+        .team
+        .members
+        .nodes
+        .iter()
+        .map(|m| m.name.clone())
+        .collect();
+
+    // Track which issues are assigned to the authenticated viewer
+    let my_issue_ids: std::collections::HashSet<String> = my_issues
+        .viewer
+        .assigned_issues
+        .nodes
+        .iter()
+        .map(|i| i.id.clone())
+        .collect();
 
     // Merge and deduplicate
     let mut seen = std::collections::HashSet::new();
@@ -92,13 +105,10 @@ pub async fn get_issues() -> Result<Vec<LinearIssue>, String> {
         .into_iter()
         .map(|raw| {
             let assignee_name = raw.assignee.as_ref().map(|a| a.name.clone());
-            let assignee_is_me = assignee_name
+            let assignee_is_me = my_issue_ids.contains(&raw.id);
+            let assignee_is_team = !assignee_is_me && assignee_name
                 .as_deref()
-                .map(|n| n == "AJ Holloway")
-                .unwrap_or(false);
-            let assignee_is_team = assignee_name
-                .as_deref()
-                .map(|n| TEAM_MEMBERS.iter().any(|&m| m == n))
+                .map(|n| team_member_names.contains(n))
                 .unwrap_or(false);
 
             LinearIssue {
