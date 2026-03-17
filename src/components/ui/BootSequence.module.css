@@ -7,6 +7,7 @@
   align-items: center;
   justify-content: center;
   pointer-events: all;
+  transition: opacity 0.8s ease-out;
 }
 
 .bootOverlay::before {
@@ -24,12 +25,15 @@
   pointer-events: none;
 }
 
-.bootFadeOut {
-  animation: boot-fade-out var(--fade-duration, 600ms) ease-out forwards;
+.overlayFadeOut {
+  opacity: 0;
   pointer-events: none;
 }
 
+/* ── Text content ── */
+
 .bootContent {
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -37,26 +41,32 @@
   max-width: 640px;
   width: 100%;
   padding: 32px;
-  max-height: 80vh;
-  overflow-y: auto;
+  height: 100vh;
+  overflow: hidden;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  z-index: 20;
 }
 
-.bootLogoImg {
-  height: 60px;
-  width: auto;
-  object-fit: contain;
-  align-self: center;
-  margin-bottom: 16px;
-  filter: drop-shadow(0 0 12px rgba(176, 38, 255, 0.5))
-    drop-shadow(0 0 30px rgba(0, 255, 245, 0.3));
+.textFadeOut {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.98);
+  pointer-events: none;
 }
 
 .bootLines {
   width: 100%;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.6;
   color: rgba(0, 255, 245, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  flex: 1;
+  min-height: 0;
 }
 
 .bootLine {
@@ -71,10 +81,6 @@
 
 .bootLineOk {
   color: rgba(0, 255, 245, 0.8);
-}
-
-.bootLineOk::after {
-  color: var(--neon-green);
 }
 
 .bootLineWarn {
@@ -96,6 +102,48 @@
   font-size: 12px;
 }
 
+/* ── Logo animation ── */
+
+.bootLogo {
+  position: absolute;
+  pointer-events: none;
+  filter: drop-shadow(0 0 12px rgba(176, 38, 255, 0.5))
+    drop-shadow(0 0 30px rgba(0, 255, 245, 0.3));
+  z-index: 5;
+}
+
+/* Phase 1-2: Logo centered behind text, small and transparent */
+.logoSmall {
+  width: 900px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.7);
+  opacity: 0.15;
+  transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity, filter;
+}
+
+/* Phase 3: Logo grows brighter and fills the screen center */
+.logoLarge {
+  width: 900px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1.3);
+  opacity: 1;
+  transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  filter: drop-shadow(0 0 30px rgba(176, 38, 255, 0.7))
+    drop-shadow(0 0 60px rgba(0, 255, 245, 0.4))
+    drop-shadow(0 0 100px rgba(255, 44, 241, 0.3));
+  will-change: transform, opacity, filter;
+}
+
+
+/* ── Keyframes ── */
+
 @keyframes boot-line-in {
   from {
     opacity: 0;
@@ -110,9 +158,4 @@
 @keyframes boot-cursor-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
-}
-
-@keyframes boot-fade-out {
-  0% { opacity: 1; }
-  100% { opacity: 0; }
 }

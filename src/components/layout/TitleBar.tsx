@@ -35,12 +35,10 @@ export function TitleBar({ openPanels, onTogglePanel }: TitleBarProps) {
 
       {/* Logo — right side */}
       <div className={styles.logoSection}>
-        <span className={styles.hudLine} />
         <img
-          src="/assets/daemon-logo.png"
+          src="/assets/daemon-logo.png?v=5"
           alt="D.A.E.M.O.N."
           className={styles.logoImg}
-          title="Distributed Autonomous Engineering Management Orchestration Node"
         />
       </div>
     </div>
