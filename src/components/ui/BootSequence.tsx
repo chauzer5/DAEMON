@@ -84,13 +84,15 @@ export function BootSequence({ forcePlay = false }: { forcePlay?: boolean }) {
 
   if (phase === "done") return null;
 
+  const isLcars = theme.layoutStyle === "lcars";
+
   return (
-    <div className={`${styles.bootOverlay} ${phase === "reveal" ? styles.overlayFadeOut : ""}`}>
+    <div className={`${styles.bootOverlay} ${phase === "reveal" ? styles.overlayFadeOut : ""} ${isLcars ? styles.bootOverlayLcars : ""}`}>
       {/* Text content — fades out during clearText */}
       <div className={`${styles.bootContent} ${
         phase !== "text" ? styles.textFadeOut : ""
       }`}>
-        <div className={styles.bootLines}>
+        <div className={`${styles.bootLines} ${isLcars ? styles.bootLinesLcars : ""}`}>
           {bootLines.slice(0, visibleLines).map((text, idx) => (
             <div
               key={idx}
@@ -110,7 +112,7 @@ export function BootSequence({ forcePlay = false }: { forcePlay?: boolean }) {
             </div>
           ))}
           {phase === "text" && visibleLines < bootLines.length && (
-            <span className={styles.bootCursor}>█</span>
+            <span className={`${styles.bootCursor} ${isLcars ? styles.bootCursorLcars : ""}`}>█</span>
           )}
         </div>
       </div>
@@ -124,7 +126,7 @@ export function BootSequence({ forcePlay = false }: { forcePlay?: boolean }) {
           phase === "text" || phase === "clearText"
             ? styles.logoSmall
             : styles.logoLarge
-        }`}
+        } ${isLcars ? styles.bootLogoLcars : ""}`}
       />
     </div>
   );

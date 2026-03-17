@@ -45,18 +45,20 @@ export function StatusBar({ onOpenSettings }: { onOpenSettings: () => void }) {
   // Duplicate the ticker messages for seamless marquee looping
   const tickerLoop = [...tickerMessages, ...tickerMessages];
 
+  const isLcars = theme.layoutStyle === "lcars";
+
   return (
-    <div className={styles.statusBar}>
-      <div className={styles.indicators}>
-        <span className={styles.hudTag}>{leftTag}</span>
+    <div className={`${styles.statusBar} ${isLcars ? styles.statusBarLcars : ""}`}>
+      <div className={`${styles.indicators} ${isLcars ? styles.indicatorsLcars : ""}`}>
+        <span className={`${styles.hudTag} ${isLcars ? styles.hudTagLcars : ""}`}>{leftTag}</span>
         {services.map((service) => (
-          <div key={service.name} className={styles.indicator}>
+          <div key={service.name} className={`${styles.indicator} ${isLcars ? styles.indicatorLcars : ""}`}>
             <span
               className={`${styles.dot} ${
                 service.connected
                   ? styles.dotConnected
                   : styles.dotDisconnected
-              }`}
+              } ${isLcars ? styles.dotLcars : ""}`}
             />
             <span>{service.name}</span>
           </div>
@@ -64,17 +66,17 @@ export function StatusBar({ onOpenSettings }: { onOpenSettings: () => void }) {
       </div>
       {/* Data ticker marquee */}
       <div className={styles.dataTicker}>
-        <div className={styles.dataTickerInner}>
+        <div className={`${styles.dataTickerInner} ${isLcars ? styles.dataTickerInnerLcars : ""}`}>
           {tickerLoop.map((msg, idx) => (
             <span key={idx}>{msg}</span>
           ))}
         </div>
       </div>
       <div className={styles.rightSection}>
-        <span className={styles.hudTagAlt}>{rightTag}</span>
+        <span className={`${styles.hudTagAlt} ${isLcars ? styles.hudTagAltLcars : ""}`}>{rightTag}</span>
         <span className={styles.timestamp}>{time}</span>
         <span className={styles.syncTime}>Synced: 5s ago</span>
-        <button className={styles.settingsBtn} onClick={onOpenSettings}>
+        <button className={`${styles.settingsBtn} ${isLcars ? styles.settingsBtnLcars : ""}`} onClick={onOpenSettings}>
           <Settings size={14} />
         </button>
       </div>

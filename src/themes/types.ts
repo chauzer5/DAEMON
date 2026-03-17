@@ -131,6 +131,10 @@ export interface ThemeCSSVariables {
   "--font-mono": string;
 }
 
+// ── Layout style ──
+
+export type LayoutStyle = "cyberpunk" | "lcars" | "trek-tos";
+
 // ── Full theme definition ──
 
 export interface ThemeDefinition {
@@ -142,6 +146,8 @@ export interface ThemeDefinition {
   description: string;
   /** Preview colors shown in the theme card (3-5 hex colors) */
   previewColors: string[];
+  /** Layout style controls the structural appearance of panels, bars, etc. */
+  layoutStyle: LayoutStyle;
   /** All CSS custom properties this theme sets on :root */
   cssVariables: ThemeCSSVariables;
   /** Boot sequence configuration */

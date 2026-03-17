@@ -11,6 +11,7 @@ export const trekTngTheme: ThemeDefinition = {
   name: "Star Trek: TNG",
   description: "LCARS interface — orange, tan & purple panels from the Enterprise-D",
   previewColors: ["#ff9933", "#cc99cc", "#9999ff", "#0a0a12", "#33cc99"],
+  layoutStyle: "lcars",
 
   cssVariables: {
     // Background palette
@@ -197,9 +198,9 @@ export const trekTngTheme: ThemeDefinition = {
   animations: {
     glitch: false,
     scanlines: false,
-    borderTrace: true,
+    borderTrace: false,
     particles: false,
-    dataStreams: true,
+    dataStreams: false,
     chromaticAberration: false,
   },
 };

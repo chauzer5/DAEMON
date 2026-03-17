@@ -213,3 +213,75 @@
   overflow-y: auto;
   padding: var(--gap-md);
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LCARS Layout Variant
+   ═══════════════════════════════════════════════════════════════════ */
+
+.panelLcars {
+  border: none;
+  border-radius: 30px 8px 8px 30px;
+  box-shadow: none;
+  border-left: 6px solid var(--neon-orange);
+  background: var(--bg-base);
+}
+
+/* Remove the neon accent line for LCARS */
+.panelLcars::before {
+  display: none;
+}
+
+/* Remove the animated border trace for LCARS */
+.panelLcars::after {
+  display: none;
+}
+
+/* LCARS hover: no glow, subtle background change */
+.panelLcars:hover {
+  border-color: transparent;
+  border-left-color: var(--neon-orange);
+  box-shadow: none;
+  background: var(--bg-raised);
+}
+
+/* ── LCARS Header: thick colored top bar ── */
+.headerLcars {
+  background: var(--neon-orange);
+  border-bottom: none;
+  padding: 4px var(--gap-lg) 4px 24px;
+  min-height: 24px;
+  animation: none;
+  flex-direction: row-reverse;
+  border-radius: 24px 6px 0 0;
+}
+
+/* Remove the scanning line for LCARS */
+.headerLcars::after {
+  display: none;
+}
+
+.iconLcars {
+  color: var(--bg-deepest);
+  filter: none;
+}
+
+.titleLcars {
+  color: var(--bg-deepest);
+  font-size: 12px;
+  letter-spacing: 4px;
+  font-weight: 800;
+}
+
+.badgeLcars {
+  background: var(--bg-deepest);
+  color: var(--neon-orange);
+  border: none;
+  border-radius: 20px;
+  font-weight: 700;
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.contentLcars {
+  padding: var(--gap-md) var(--gap-md) var(--gap-md) 24px;
+}

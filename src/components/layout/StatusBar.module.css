@@ -174,3 +174,76 @@
 .dataTickerInner span {
   padding-right: 24px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LCARS Layout Variant
+   ═══════════════════════════════════════════════════════════════════ */
+
+.statusBarLcars {
+  background: var(--bg-deep);
+  border-top: none;
+}
+
+/* Replace animated gradient with solid LCARS bar */
+.statusBarLcars::before {
+  height: 4px;
+  background: var(--neon-cyan);
+  background-size: 100% 100%;
+  animation: none;
+  opacity: 1;
+  border-radius: 2px 2px 0 0;
+}
+
+.indicatorsLcars {
+  gap: var(--gap-md);
+}
+
+.indicatorLcars {
+  background: var(--bg-surface);
+  padding: 2px 12px;
+  border-radius: 20px;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.dotLcars {
+  animation: none;
+}
+
+.dotLcars::after,
+.dotLcars::before {
+  display: none;
+}
+
+.hudTagLcars {
+  color: var(--neon-orange);
+  opacity: 0.8;
+  animation: none;
+  font-weight: 700;
+}
+
+.hudTagAltLcars {
+  color: var(--neon-purple);
+  opacity: 0.8;
+  animation: none;
+  font-weight: 700;
+}
+
+.dataTickerInnerLcars {
+  color: rgba(255, 153, 51, 0.4);
+}
+
+.settingsBtnLcars {
+  border: none;
+  background: var(--neon-purple);
+  color: var(--bg-deepest);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+.settingsBtnLcars:hover {
+  background: var(--neon-cyan);
+  color: var(--bg-deepest);
+  border-color: transparent;
+  box-shadow: none;
+}

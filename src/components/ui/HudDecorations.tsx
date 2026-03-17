@@ -95,6 +95,10 @@ function generateStreamColumns(count: number, streamChars: string): StreamColumn
 
 export function HudDecorations() {
   const { theme } = useTheme();
+
+  // LCARS is clean — no floating particles, data streams, or HUD decorations
+  if (theme.layoutStyle === "lcars") return null;
+
   const { stats, streamCharacters, streamColumnCount, particleCount, particleColors } = theme.hud;
 
   const [tl, tr, bl, br] = stats;

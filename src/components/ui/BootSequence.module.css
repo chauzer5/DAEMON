@@ -159,3 +159,32 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LCARS Layout Variant
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* LCARS boot: dark blue background, no CRT scanlines */
+.bootOverlayLcars {
+  background: #0a0a12;
+}
+
+/* Remove the CRT scanline overlay for LCARS */
+.bootOverlayLcars::before {
+  display: none;
+}
+
+/* LCARS boot text: orange/cream instead of cyan */
+.bootLinesLcars {
+  color: rgba(255, 153, 51, 0.8);
+}
+
+.bootCursorLcars {
+  color: #ff9933;
+}
+
+/* LCARS logo glow: warm orange instead of purple/cyan */
+.bootLogoLcars {
+  filter: drop-shadow(0 0 12px rgba(255, 153, 51, 0.5))
+    drop-shadow(0 0 30px rgba(255, 153, 51, 0.3));
+}

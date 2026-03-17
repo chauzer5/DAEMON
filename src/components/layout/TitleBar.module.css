@@ -113,3 +113,78 @@
   -webkit-app-region: no-drag;
   transform: translate(15%, -38%);
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LCARS Layout Variant
+   ═══════════════════════════════════════════════════════════════════ */
+
+.titleBarLcars {
+  background: var(--bg-deep);
+  border-bottom: none;
+  padding-left: 100px;
+}
+
+/* Replace the animated gradient line with a solid LCARS colored bar */
+.titleBarLcars::after {
+  height: 4px;
+  background: var(--neon-orange);
+  background-size: 100% 100%;
+  animation: none;
+  opacity: 1;
+  border-radius: 0 0 2px 2px;
+}
+
+/* ── LCARS curved elbow on the left ── */
+.lcarsElbow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  background: var(--neon-orange);
+  border-radius: 0 0 30px 0;
+  -webkit-app-region: drag;
+}
+
+/* ── LCARS panel toggles ── */
+.panelTogglesLcars {
+  gap: 4px;
+}
+
+.panelToggleLcars {
+  border: none;
+  border-radius: 20px;
+  background: var(--lcars-btn-color, #ff9933);
+  color: var(--bg-deepest);
+  font-weight: 800;
+  letter-spacing: 2px;
+  padding: 5px 16px;
+  opacity: 0.5;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.panelToggleLcars:hover {
+  opacity: 0.75;
+  color: var(--bg-deepest);
+  border-color: transparent;
+  background: var(--lcars-btn-color, #ff9933);
+  box-shadow: none;
+}
+
+.panelToggleLcarsActive {
+  opacity: 1;
+}
+
+.panelToggleLcarsActive:hover {
+  opacity: 1;
+  color: var(--bg-deepest);
+  border-color: transparent;
+  background: var(--lcars-btn-color, #ff9933);
+  box-shadow: none;
+}
+
+/* ── LCARS logo adjustment ── */
+.logoImgLcars {
+  filter: drop-shadow(0 0 8px rgba(255, 153, 51, 0.3))
+    drop-shadow(0 0 20px rgba(153, 153, 255, 0.15));
+}

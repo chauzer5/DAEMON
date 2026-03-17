@@ -11,6 +11,7 @@ export const trekTosTheme: ThemeDefinition = {
   name: "Star Trek: TOS",
   description: "1960s retro-futurism — Command Gold & Science Blue on dark navy",
   previewColors: ["#f7a41d", "#5b9bd5", "#c0392b", "#0a0c14", "#27ae60"],
+  layoutStyle: "trek-tos",
 
   cssVariables: {
     // Background palette

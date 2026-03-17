@@ -88,3 +88,42 @@
       0 0 35px rgba(255, 44, 241, 0.1);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LCARS Layout Variant
+   ═══════════════════════════════════════════════════════════════════ */
+
+.cardLcars {
+  border: none;
+  border-left: 4px solid var(--neon-orange);
+  border-radius: 2px 4px 4px 2px;
+  box-shadow: none;
+}
+
+/* No diagonal scan on hover for LCARS */
+.cardLcars::before {
+  display: none;
+}
+
+/* No click flash for LCARS */
+.cardLcars::after {
+  display: none;
+}
+
+.cardLcars:hover {
+  border-color: transparent;
+  border-left-color: var(--neon-cyan);
+  box-shadow: none;
+  background: var(--bg-surface);
+}
+
+/* ── LCARS urgent: thicker red left border, no glow animation ── */
+.urgentLcars {
+  border-left: 6px solid var(--neon-red);
+  animation: none;
+}
+
+.urgentLcars:hover {
+  border-left-color: var(--neon-red);
+  box-shadow: none;
+}

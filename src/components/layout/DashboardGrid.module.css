@@ -81,3 +81,15 @@
   animation: dot-ring-expand 2s ease-out infinite;
   transform: translate(-50%, -50%);
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LCARS Layout Variant — clean gaps, no glowing crosshair lines
+   ═══════════════════════════════════════════════════════════════════ */
+
+.gridLcars::before {
+  display: none;
+}
+
+.gridLcars::after {
+  display: none;
+}

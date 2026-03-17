@@ -53,9 +53,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeId, setThemeIdState] = useState(readStoredThemeId);
   const theme = getTheme(themeId);
 
-  // Apply CSS variables whenever theme changes
+  // Apply CSS variables and layout attribute whenever theme changes
   useEffect(() => {
     applyCSSVariables(theme.cssVariables);
+    document.documentElement.dataset.layout = theme.layoutStyle;
   }, [theme]);
 
   const setThemeId = useCallback((id: string) => {

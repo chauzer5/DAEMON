@@ -11,6 +11,7 @@ export const cyberpunkTheme: ThemeDefinition = {
   name: "Cyberpunk",
   description: "The original Night City aesthetic — neon cyan & magenta on deep purple",
   previewColors: ["#0a0a0f", "#b026ff", "#00fff5", "#ff2cf1", "#39ff14"],
+  layoutStyle: "cyberpunk",
 
   cssVariables: {
     // Background palette
