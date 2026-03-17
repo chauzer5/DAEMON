@@ -105,7 +105,7 @@ export function BootSequence({ forcePlay = false }: { forcePlay?: boolean }) {
     const showAssembly = phase === "logoGrow" || phase === "logoHold" || phase === "reveal";
 
     return (
-      <div className={`${styles.lcarsBootOverlay} ${phase === "reveal" ? styles.overlayFadeOut : ""}`}>
+      <div className={`${styles.lcarsBootOverlay} ${phase === "reveal" ? styles.overlayFadeOut : ""}`} data-tauri-drag-region>
         {/* Subtle starfield background throughout */}
         <div className={styles.starfield}>
           {STARS.map((star) => (
@@ -222,7 +222,7 @@ export function BootSequence({ forcePlay = false }: { forcePlay?: boolean }) {
 
   // ─── Cyberpunk Boot (unchanged) ───
   return (
-    <div className={`${styles.bootOverlay} ${phase === "reveal" ? styles.overlayFadeOut : ""}`}>
+    <div className={`${styles.bootOverlay} ${phase === "reveal" ? styles.overlayFadeOut : ""}`} data-tauri-drag-region>
       {/* Text content — fades out during clearText */}
       <div className={`${styles.bootContent} ${
         phase !== "text" ? styles.textFadeOut : ""

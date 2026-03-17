@@ -115,7 +115,7 @@
 /* Phase 1-2: Logo centered behind text, small and transparent */
 .logoSmall {
   width: 900px;
-  top: 50%;
+  top: 20%;
   left: 50%;
   transform: translate(-50%, -50%) scale(0.7);
   opacity: 0.15;
@@ -128,7 +128,7 @@
 /* Phase 3: Logo grows brighter and fills the screen center */
 .logoLarge {
   width: 900px;
-  top: 50%;
+  top: 20%;
   left: 50%;
   transform: translate(-50%, -50%) scale(1.3);
   opacity: 1;

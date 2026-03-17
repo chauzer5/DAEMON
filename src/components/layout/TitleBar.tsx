@@ -27,11 +27,11 @@ export function TitleBar({ openPanels, onTogglePanel }: TitleBarProps) {
     return (
       <div className={styles.titleBarLcars} data-tauri-drag-region>
         {/* Smaller curved elbow on the left */}
-        <div className={styles.lcarsElbow} />
+        <div className={styles.lcarsElbow} data-tauri-drag-region />
 
         {/* Simplified bar: elbow color, toggles, fill, pill end */}
-        <div className={styles.lcarsBarSegments}>
-          <div className={styles.lcarsBarSeg} style={{ background: "#cc9966", flex: "0 0 60px" }} />
+        <div className={styles.lcarsBarSegments} data-tauri-drag-region>
+          <div className={styles.lcarsBarSeg} data-tauri-drag-region style={{ background: "#cc9966", flex: "0 0 60px" }} />
 
           {/* Panel toggle buttons — subtle text inside the bar */}
           <div className={styles.panelTogglesLcars}>
@@ -50,13 +50,13 @@ export function TitleBar({ openPanels, onTogglePanel }: TitleBarProps) {
           </div>
 
           {/* Fill segment that stretches */}
-          <div className={styles.lcarsBarSeg} style={{ background: "#ff9933", flex: "1 1 auto" }} />
+          <div className={styles.lcarsBarSeg} data-tauri-drag-region style={{ background: "#ff9933", flex: "1 1 auto" }} />
           {/* Pill-shaped right end */}
-          <div className={styles.lcarsBarSeg} style={{ background: "#cc9966", flex: "0 0 40px", borderRadius: "0 22px 22px 0" }} />
+          <div className={styles.lcarsBarSeg} data-tauri-drag-region style={{ background: "#cc9966", flex: "0 0 40px", borderRadius: "0 22px 22px 0" }} />
         </div>
 
         {/* Logo — right side */}
-        <div className={styles.logoSection}>
+        <div className={styles.logoSection} data-tauri-drag-region>
           <img
             src={theme.bootSequence.logoPath}
             alt="D.A.E.M.O.N."
@@ -85,7 +85,7 @@ export function TitleBar({ openPanels, onTogglePanel }: TitleBarProps) {
       </div>
 
       {/* Logo — right side */}
-      <div className={styles.logoSection}>
+      <div className={styles.logoSection} data-tauri-drag-region>
         <img
           src={theme.bootSequence.logoPath}
           alt="D.A.E.M.O.N."
