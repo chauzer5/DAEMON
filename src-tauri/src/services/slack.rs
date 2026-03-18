@@ -25,7 +25,16 @@ pub fn get_slack_creds() -> Result<SlackCreds, String> {
         .join("scripts")
         .join("slack_creds.py");
 
-    let output = std::process::Command::new("python3")
+    // Use absolute path — bundled .app has minimal PATH
+    let python = if std::path::Path::new("/opt/homebrew/bin/python3").exists() {
+        "/opt/homebrew/bin/python3"
+    } else if std::path::Path::new("/usr/local/bin/python3").exists() {
+        "/usr/local/bin/python3"
+    } else {
+        "python3"
+    };
+
+    let output = std::process::Command::new(python)
         .arg(&script_path)
         .output()
         .map_err(|e| format!("Failed to run slack_creds.py: {}", e))?;

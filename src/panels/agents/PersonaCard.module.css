@@ -1,0 +1,240 @@
+/* ── Persona Card — Cyberpunk Edition ── */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px;
+  background: var(--bg-raised);
+  border: 1px solid rgba(176, 38, 255, 0.1);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: center;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.3s, background 0.2s;
+}
+
+.card:hover {
+  background: var(--bg-hover);
+  border-color: var(--persona-color, var(--neon-cyan));
+  box-shadow:
+    0 0 12px color-mix(in srgb, var(--persona-color, var(--neon-cyan)) 20%, transparent),
+    0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Selected — breathing neon ── */
+
+.selected {
+  border-color: var(--persona-color, var(--neon-cyan));
+  background: rgba(0, 255, 245, 0.06);
+  animation: card-selected-pulse 2s ease-in-out infinite;
+}
+
+@keyframes card-selected-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 14px color-mix(in srgb, var(--persona-color, var(--neon-cyan)) 25%, transparent),
+      inset 0 0 10px color-mix(in srgb, var(--persona-color, var(--neon-cyan)) 8%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 22px color-mix(in srgb, var(--persona-color, var(--neon-cyan)) 35%, transparent),
+      inset 0 0 16px color-mix(in srgb, var(--persona-color, var(--neon-cyan)) 12%, transparent);
+  }
+}
+
+/* ── Solo mode (single agent selected — larger card) ── */
+
+.solo {
+  padding: 16px 20px;
+  flex-direction: row;
+  gap: 12px;
+  min-width: unset;
+  width: 100%;
+}
+
+.solo .avatarWrap {
+  width: 56px;
+  height: 56px;
+}
+
+.solo .avatar {
+  width: 56px;
+  height: 56px;
+}
+
+.solo .name {
+  font-size: 14px;
+}
+
+/* ── Scanline overlay ── */
+
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--persona-color, var(--neon-cyan)),
+    transparent
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.card:hover .scanline {
+  opacity: 0.6;
+  animation: card-scan 1.5s linear infinite;
+}
+
+@keyframes card-scan {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+/* ── Corner accents ── */
+
+.corner {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.card:hover .corner,
+.selected .corner {
+  opacity: 1;
+}
+
+.cornerTL {
+  top: 3px;
+  left: 3px;
+  border-top: 1px solid var(--persona-color, var(--neon-cyan));
+  border-left: 1px solid var(--persona-color, var(--neon-cyan));
+}
+
+.cornerBR {
+  bottom: 3px;
+  right: 3px;
+  border-bottom: 1px solid var(--persona-color, var(--neon-cyan));
+  border-right: 1px solid var(--persona-color, var(--neon-cyan));
+}
+
+/* ── Ripple effect ── */
+
+.ripple {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--persona-color, var(--neon-cyan));
+  transform: translate(-50%, -50%) scale(0);
+  animation: ripple-expand 0.6s ease-out forwards;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+@keyframes ripple-expand {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(40);
+    opacity: 0;
+  }
+}
+
+/* ── Avatar ── */
+
+.avatarWrap {
+  position: relative;
+  width: 48px;
+  height: 48px;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--persona-color, var(--neon-cyan));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--persona-color, var(--neon-cyan)) 40%, transparent);
+  transition: box-shadow 0.3s;
+}
+
+.card:hover .avatar {
+  box-shadow: 0 0 16px color-mix(in srgb, var(--persona-color, var(--neon-cyan)) 60%, transparent);
+}
+
+.selected .avatar {
+  box-shadow: 0 0 18px color-mix(in srgb, var(--persona-color, var(--neon-cyan)) 70%, transparent);
+}
+
+.avatarGlitch {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--persona-color, var(--neon-cyan));
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+.card:hover .avatarGlitch {
+  animation: avatar-glitch 0.3s steps(2) 1;
+}
+
+@keyframes avatar-glitch {
+  0% { opacity: 0; }
+  20% { opacity: 0.4; transform: translateX(2px); }
+  40% { opacity: 0; transform: translateX(-2px); }
+  60% { opacity: 0.3; transform: translateX(1px); }
+  80%, 100% { opacity: 0; }
+}
+
+/* ── Fallback icon ── */
+
+.icon {
+  color: var(--persona-color, var(--neon-cyan));
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--persona-color, var(--neon-cyan)) 50%, transparent));
+}
+
+/* ── Text ── */
+
+.name {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--persona-color, var(--neon-cyan));
+  transition: text-shadow 0.2s;
+}
+
+.card:hover .name {
+  text-shadow: 0 0 8px color-mix(in srgb, var(--persona-color, var(--neon-cyan)) 50%, transparent);
+}
+
+.role {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.franchise {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim, rgba(255, 255, 255, 0.3));
+  line-height: 1.2;
+  font-style: italic;
+}

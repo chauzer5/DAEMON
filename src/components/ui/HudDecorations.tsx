@@ -1,21 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
 import styles from "./HudDecorations.module.css";
 import { useTheme } from "../../themes";
-
-/** Generates a fake stat value that drifts slightly over time */
-function useFakeStat(base: number, range: number, label: string) {
-  const [value, setValue] = useState(base);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const drift = (Math.random() - 0.5) * range;
-      setValue(Math.min(99.9, Math.max(10, base + drift)));
-    }, 3000 + Math.random() * 2000);
-    return () => clearInterval(interval);
-  }, [base, range]);
-
-  return `${label}: ${value.toFixed(1)}%`;
-}
 
 /** Generate a random character from a stream character set */
 function randomStreamChar(chars: string) {
@@ -99,13 +85,7 @@ export function HudDecorations() {
   // LCARS is clean — no floating particles, data streams, or HUD decorations
   if (theme.layoutStyle === "lcars") return null;
 
-  const { stats, streamCharacters, streamColumnCount, particleCount, particleColors } = theme.hud;
-
-  const [tl, tr, bl, br] = stats;
-  const memStat = useFakeStat(tl.base, tl.range, tl.label);
-  const cpuStat = useFakeStat(tr.base, tr.range, tr.label);
-  const netStat = useFakeStat(bl.base, bl.range, bl.label);
-  const bufStat = useFakeStat(br.base, br.range, br.label);
+  const { streamCharacters, streamColumnCount, particleCount, particleColors } = theme.hud;
 
   // Generate stable configurations once (re-generate when theme changes)
   const streamColumns = useMemo(
@@ -137,12 +117,6 @@ export function HudDecorations() {
       <div className={styles.cornerMarkBL} />
       <div className={styles.cornerMarkBR} />
 
-      {/* Data readouts */}
-      <span className={styles.dataReadoutTL}>{memStat}</span>
-      <span className={styles.dataReadoutTR}>{cpuStat}</span>
-      <span className={styles.dataReadoutBL}>{netStat}</span>
-      <span className={styles.dataReadoutBR}>{bufStat}</span>
-
       {/* Decorative lines with dots */}
       <div className={styles.decorLineTop}>
         <span className={styles.lineDot} />
@@ -154,6 +128,168 @@ export function HudDecorations() {
         <span className={styles.lineBar} />
         <span className={styles.lineDot} />
       </div>
+
+      {/* Cyberpunk animated circuit lines */}
+      <svg className={styles.circuitOverlay} viewBox="0 0 1920 1080" preserveAspectRatio="none">
+        {/* Top-left circuit */}
+        <motion.path
+          d="M 0 120 L 80 120 L 100 100 L 200 100"
+          className={styles.circuitLine}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.4, 0.15] }}
+          transition={{ duration: 2, repeat: Infinity, repeatDelay: 4, ease: "easeInOut" }}
+        />
+        <motion.path
+          d="M 0 180 L 50 180 L 70 160 L 160 160 L 180 180 L 250 180"
+          className={styles.circuitLine}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.3, 0.1] }}
+          transition={{ duration: 1.5, delay: 1, repeat: Infinity, repeatDelay: 5, ease: "easeInOut" }}
+        />
+        {/* Top-right circuit */}
+        <motion.path
+          d="M 1920 150 L 1820 150 L 1800 130 L 1700 130"
+          className={styles.circuitLineCyan}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.35, 0.12] }}
+          transition={{ duration: 1.8, delay: 0.5, repeat: Infinity, repeatDelay: 6, ease: "easeInOut" }}
+        />
+        {/* Bottom-left circuit */}
+        <motion.path
+          d="M 0 900 L 120 900 L 140 920 L 280 920"
+          className={styles.circuitLineMagenta}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.3, 0.1] }}
+          transition={{ duration: 2.2, delay: 2, repeat: Infinity, repeatDelay: 7, ease: "easeInOut" }}
+        />
+        {/* Bottom-right circuit */}
+        <motion.path
+          d="M 1920 950 L 1840 950 L 1820 930 L 1720 930 L 1700 950 L 1650 950"
+          className={styles.circuitLine}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.35, 0.12] }}
+          transition={{ duration: 1.6, delay: 3, repeat: Infinity, repeatDelay: 5, ease: "easeInOut" }}
+        />
+        {/* Left edge vertical circuit */}
+        <motion.path
+          d="M 30 300 L 30 400 L 50 420 L 50 520 L 30 540 L 30 600"
+          className={styles.circuitLineCyan}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.25, 0.08] }}
+          transition={{ duration: 3, delay: 1.5, repeat: Infinity, repeatDelay: 8, ease: "easeInOut" }}
+        />
+        {/* Right edge vertical circuit */}
+        <motion.path
+          d="M 1890 350 L 1890 450 L 1870 470 L 1870 550 L 1890 570 L 1890 650"
+          className={styles.circuitLine}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.2, 0.07] }}
+          transition={{ duration: 2.8, delay: 4, repeat: Infinity, repeatDelay: 9, ease: "easeInOut" }}
+        />
+        {/* Mid-left horizontal with branch */}
+        <motion.path
+          d="M 0 540 L 40 540 L 60 520 L 120 520 L 140 540 L 200 540 L 220 520"
+          className={styles.circuitLineMagenta}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.2, 0.06] }}
+          transition={{ duration: 2.5, delay: 6, repeat: Infinity, repeatDelay: 10, ease: "easeInOut" }}
+        />
+        {/* Mid-right horizontal */}
+        <motion.path
+          d="M 1920 480 L 1860 480 L 1840 500 L 1760 500 L 1740 480 L 1680 480"
+          className={styles.circuitLineCyan}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.25, 0.08] }}
+          transition={{ duration: 2, delay: 3.5, repeat: Infinity, repeatDelay: 7, ease: "easeInOut" }}
+        />
+        {/* Top-left diagonal connector */}
+        <motion.path
+          d="M 100 100 L 100 140 L 120 160"
+          className={styles.circuitLine}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.3, 0.1] }}
+          transition={{ duration: 1, delay: 2, repeat: Infinity, repeatDelay: 4, ease: "easeInOut" }}
+        />
+        {/* Bottom center trace */}
+        <motion.path
+          d="M 800 1060 L 800 1020 L 820 1000 L 920 1000 L 940 1020 L 1100 1020 L 1120 1000"
+          className={styles.circuitLine}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.15, 0.05] }}
+          transition={{ duration: 2.5, delay: 5, repeat: Infinity, repeatDelay: 8, ease: "easeInOut" }}
+        />
+        {/* Top center trace */}
+        <motion.path
+          d="M 700 20 L 700 50 L 720 70 L 850 70 L 870 50 L 870 20"
+          className={styles.circuitLineCyan}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: [0, 0.2, 0.06] }}
+          transition={{ duration: 2, delay: 7, repeat: Infinity, repeatDelay: 9, ease: "easeInOut" }}
+        />
+
+        {/* Circuit nodes — glowing dots at intersections */}
+        <motion.circle
+          cx="200" cy="100" r="2"
+          className={styles.circuitNode}
+          animate={{ opacity: [0, 0.6, 0], scale: [0.5, 1.5, 0.5] }}
+          transition={{ duration: 2, delay: 2, repeat: Infinity, repeatDelay: 4 }}
+        />
+        <motion.circle
+          cx="250" cy="180" r="2"
+          className={styles.circuitNode}
+          animate={{ opacity: [0, 0.5, 0], scale: [0.5, 1.5, 0.5] }}
+          transition={{ duration: 2, delay: 2.5, repeat: Infinity, repeatDelay: 5 }}
+        />
+        <motion.circle
+          cx="1700" cy="130" r="2"
+          className={styles.circuitNodeCyan}
+          animate={{ opacity: [0, 0.5, 0], scale: [0.5, 1.5, 0.5] }}
+          transition={{ duration: 2, delay: 2.3, repeat: Infinity, repeatDelay: 6 }}
+        />
+        <motion.circle
+          cx="280" cy="920" r="2"
+          className={styles.circuitNodeMagenta}
+          animate={{ opacity: [0, 0.5, 0], scale: [0.5, 1.5, 0.5] }}
+          transition={{ duration: 2, delay: 4.2, repeat: Infinity, repeatDelay: 7 }}
+        />
+        {/* Additional nodes on new circuits */}
+        <motion.circle
+          cx="50" cy="520" r="2"
+          className={styles.circuitNodeCyan}
+          animate={{ opacity: [0, 0.4, 0], scale: [0.5, 1.3, 0.5] }}
+          transition={{ duration: 2, delay: 3, repeat: Infinity, repeatDelay: 8 }}
+        />
+        <motion.circle
+          cx="1870" cy="470" r="2"
+          className={styles.circuitNode}
+          animate={{ opacity: [0, 0.4, 0], scale: [0.5, 1.3, 0.5] }}
+          transition={{ duration: 2, delay: 5, repeat: Infinity, repeatDelay: 9 }}
+        />
+        <motion.circle
+          cx="1680" cy="480" r="2"
+          className={styles.circuitNodeCyan}
+          animate={{ opacity: [0, 0.5, 0], scale: [0.5, 1.5, 0.5] }}
+          transition={{ duration: 2, delay: 5.5, repeat: Infinity, repeatDelay: 7 }}
+        />
+        <motion.circle
+          cx="220" cy="520" r="2"
+          className={styles.circuitNodeMagenta}
+          animate={{ opacity: [0, 0.4, 0], scale: [0.5, 1.3, 0.5] }}
+          transition={{ duration: 2, delay: 7, repeat: Infinity, repeatDelay: 10 }}
+        />
+        <motion.circle
+          cx="920" cy="1000" r="2"
+          className={styles.circuitNode}
+          animate={{ opacity: [0, 0.3, 0], scale: [0.5, 1.3, 0.5] }}
+          transition={{ duration: 2, delay: 6, repeat: Infinity, repeatDelay: 8 }}
+        />
+        <motion.circle
+          cx="850" cy="70" r="2"
+          className={styles.circuitNodeCyan}
+          animate={{ opacity: [0, 0.35, 0], scale: [0.5, 1.3, 0.5] }}
+          transition={{ duration: 2, delay: 8, repeat: Infinity, repeatDelay: 9 }}
+        />
+      </svg>
 
       {/* Data stream columns (Matrix rain) */}
       {streamColumns.map((col, idx) => (

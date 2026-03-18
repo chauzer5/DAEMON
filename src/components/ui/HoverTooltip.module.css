@@ -121,3 +121,24 @@
   color: var(--neon-magenta);
   text-shadow: 0 0 8px rgba(255, 44, 241, 0.5);
 }
+
+/* ── Variant: yellow color ── */
+.lineYellow {
+  composes: line;
+  background: linear-gradient(
+    90deg,
+    var(--neon-yellow),
+    rgba(255, 213, 0, 0.4)
+  );
+}
+
+.lineYellow::before {
+  background: var(--neon-yellow);
+  box-shadow: 0 0 6px rgba(255, 213, 0, 0.8);
+}
+
+.textYellow {
+  composes: text;
+  color: var(--neon-yellow);
+  text-shadow: 0 0 8px rgba(255, 213, 0, 0.5);
+}

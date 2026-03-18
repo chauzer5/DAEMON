@@ -60,6 +60,7 @@ pub struct UserRef {
 
 #[derive(Debug, Deserialize)]
 pub struct TeamRef {
+    pub id: Option<String>,
     pub key: String,
     pub name: String,
 }
@@ -118,6 +119,40 @@ pub struct CommentUser {
     pub name: String,
 }
 
+/// Workflow states (for status transitions)
+
+#[derive(Debug, Deserialize)]
+pub struct TeamStatesData {
+    pub team: TeamWithStates,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TeamWithStates {
+    pub states: StateConnection,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StateConnection {
+    pub nodes: Vec<WorkflowStateRaw>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct WorkflowStateRaw {
+    pub id: String,
+    pub name: String,
+    #[serde(rename = "type")]
+    pub state_type: String,
+    pub position: f64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct WorkflowState {
+    pub id: String,
+    pub name: String,
+    pub state_type: String,
+    pub position: f64,
+}
+
 /// Frontend-facing detail type
 
 #[derive(Debug, Clone, Serialize)]
@@ -130,6 +165,7 @@ pub struct LinearIssueDetail {
     pub status_type: String,
     pub priority: u8,
     pub assignee: Option<String>,
+    pub team_id: String,
     pub team_key: String,
     pub labels: Vec<String>,
     pub url: String,

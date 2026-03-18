@@ -22,12 +22,19 @@
   --neon-orange: #ff6b2b;
   --neon-yellow: #ffe600;
   --neon-red: #ff1744;
+  --neon-blue: #4488ff;
+  --neon-teal: #00ccaa;
 
   /* ── RGB versions for rgba() usage ── */
   --neon-magenta-rgb: 255, 44, 241;
   --neon-cyan-rgb: 0, 255, 245;
   --neon-purple-rgb: 176, 38, 255;
   --neon-green-rgb: 57, 255, 20;
+  --neon-orange-rgb: 255, 107, 43;
+  --neon-yellow-rgb: 255, 230, 0;
+  --neon-red-rgb: 255, 23, 68;
+  --neon-blue-rgb: 68, 136, 255;
+  --neon-teal-rgb: 0, 204, 170;
 
   /* ── Dimmed accents (for backgrounds, borders) ── */
   --neon-magenta-dim: rgba(255, 44, 241, 0.15);
@@ -52,8 +59,8 @@
     0 0 40px rgba(57, 255, 20, 0.1);
 
   /* ── Panel border glow (multi-layer) ── */
-  --panel-glow: 0 0 1px rgba(0, 255, 245, 0.6), 0 0 4px rgba(0, 255, 245, 0.3),
-    0 0 12px rgba(0, 255, 245, 0.15), inset 0 0 8px rgba(0, 255, 245, 0.05);
+  --panel-glow: 0 0 1px rgba(176, 38, 255, 0.5), 0 0 4px rgba(176, 38, 255, 0.25),
+    0 0 12px rgba(0, 255, 245, 0.1), inset 0 0 8px rgba(176, 38, 255, 0.04);
 
   /* ── Typography ── */
   --font-display: "Orbitron", sans-serif;
@@ -63,9 +70,9 @@
   /* ── Spacing ── */
   --gap-xs: 4px;
   --gap-sm: 8px;
-  --gap-md: 12px;
-  --gap-lg: 16px;
-  --gap-xl: 24px;
+  --gap-md: 16px;
+  --gap-lg: 20px;
+  --gap-xl: 28px;
 
   /* ── Border radius ── */
   --radius-sm: 4px;
@@ -75,4 +82,15 @@
   /* ── Title bar height ── */
   --titlebar-height: 50px;
   --statusbar-height: 36px;
+
+  /* ── Sidebar ── */
+  --sidebar-width: 240px;
+  --sidebar-width-collapsed: 56px;
+
+  /* ── Lava lamp background ── */
+  --lava-blob-1: rgba(0, 255, 245, 0.3);
+  --lava-blob-2: rgba(255, 44, 241, 0.3);
+  --lava-blob-3: rgba(176, 38, 255, 0.3);
+  --lava-blob-4: rgba(0, 255, 245, 0.2);
+  --lava-blob-opacity: 0.12;
 }

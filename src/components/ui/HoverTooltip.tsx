@@ -6,8 +6,8 @@ interface HoverTooltipProps {
   label: string;
   /** Direction the line extends: "right" (default) or "left" */
   direction?: "right" | "left";
-  /** Color variant: "cyan" (default) or "magenta" */
-  color?: "cyan" | "magenta";
+  /** Color variant: "cyan" (default), "magenta", or "yellow" */
+  color?: "cyan" | "magenta" | "yellow";
   /** Length of the connecting line in px */
   lineLength?: number;
   className?: string;
@@ -26,19 +26,22 @@ export function HoverTooltip({
   } as CSSProperties;
 
   const isLeft = direction === "left";
-  const isMagenta = color === "magenta";
 
   const lineClass = isLeft
     ? styles.lineLeft
-    : isMagenta
+    : color === "magenta"
       ? styles.lineMagenta
-      : styles.line;
+      : color === "yellow"
+        ? styles.lineYellow
+        : styles.line;
 
   const textClass = isLeft
     ? styles.textLeft
-    : isMagenta
+    : color === "magenta"
       ? styles.textMagenta
-      : styles.text;
+      : color === "yellow"
+        ? styles.textYellow
+        : styles.text;
 
   return (
     <span className={`${styles.wrapper} ${className ?? ""}`}>

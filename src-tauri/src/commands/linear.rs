@@ -1,4 +1,4 @@
-use crate::models::linear::{IssueDetailData, LinearIssue, LinearIssueDetail, TeamIssuesData, ViewerData};
+use crate::models::linear::{IssueDetailData, LinearIssue, LinearIssueDetail, TeamIssuesData, TeamStatesData, ViewerData, WorkflowState};
 use crate::services::credentials;
 use crate::services::linear::LinearClient;
 
@@ -134,7 +134,7 @@ pub async fn get_issue_detail(identifier: String) -> Result<LinearIssueDetail, S
                 id identifier title description priority url
                 state {{ name type }}
                 assignee {{ id name }}
-                team {{ key name }}
+                team {{ id key name }}
                 labels {{ nodes {{ name }} }}
                 comments(first: 30, orderBy: createdAt) {{
                     nodes {{
@@ -161,6 +161,7 @@ pub async fn get_issue_detail(identifier: String) -> Result<LinearIssueDetail, S
         status_type: raw.state.state_type,
         priority: raw.priority,
         assignee: raw.assignee.map(|a| a.name),
+        team_id: raw.team.id.unwrap_or_default(),
         team_key: raw.team.key,
         labels: raw.labels.nodes.into_iter().map(|l| l.name).collect(),
         url: raw.url,
@@ -199,4 +200,58 @@ pub async fn add_linear_comment(issue_id: String, body: String) -> Result<bool, 
     );
     let data: CommentCreateResponse = client.query(&query).await?;
     Ok(data.comment_create.success)
+}
+
+#[tauri::command]
+pub async fn get_workflow_states(team_id: String) -> Result<Vec<WorkflowState>, String> {
+    let client = get_client()?;
+    let query = format!(
+        r#"{{
+            team(id: "{}") {{
+                states {{
+                    nodes {{
+                        id name type position
+                    }}
+                }}
+            }}
+        }}"#,
+        team_id
+    );
+    let data: TeamStatesData = client.query(&query).await?;
+    let mut states: Vec<WorkflowState> = data
+        .team
+        .states
+        .nodes
+        .into_iter()
+        .map(|s| WorkflowState {
+            id: s.id,
+            name: s.name,
+            state_type: s.state_type,
+            position: s.position,
+        })
+        .collect();
+    states.sort_by(|a, b| a.position.partial_cmp(&b.position).unwrap());
+    Ok(states)
+}
+
+#[derive(serde::Deserialize)]
+struct IssueUpdateResponse {
+    #[serde(rename = "issueUpdate")]
+    issue_update: IssueUpdateResult,
+}
+
+#[derive(serde::Deserialize)]
+struct IssueUpdateResult {
+    success: bool,
+}
+
+#[tauri::command]
+pub async fn update_issue_status(issue_id: String, state_id: String) -> Result<bool, String> {
+    let client = get_client()?;
+    let query = format!(
+        r#"mutation {{ issueUpdate(id: "{}", input: {{ stateId: "{}" }}) {{ success }} }}"#,
+        issue_id, state_id
+    );
+    let data: IssueUpdateResponse = client.query(&query).await?;
+    Ok(data.issue_update.success)
 }

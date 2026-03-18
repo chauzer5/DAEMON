@@ -1,0 +1,87 @@
+/* ── Persona Picker ── */
+
+.picker {
+  margin-bottom: var(--gap-lg);
+}
+
+/* ── Preset Chips ── */
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--gap-md);
+}
+
+.presetChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid rgba(176, 38, 255, 0.2);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.presetChip:hover {
+  border-color: var(--neon-cyan);
+  background: rgba(0, 255, 245, 0.04);
+}
+
+.presetChipActive {
+  border-color: var(--neon-cyan);
+  background: rgba(0, 255, 245, 0.08);
+  box-shadow: 0 0 8px rgba(0, 255, 245, 0.12);
+}
+
+.presetLabel {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.presetChipActive .presetLabel {
+  color: var(--neon-cyan);
+}
+
+.presetCount {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 5px;
+  border-radius: 8px;
+}
+
+/* ── Label & Grid ── */
+
+.label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--gap-sm);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap-sm);
+}
+
+.gridCell {
+  display: flex;
+  min-width: 0;
+}
+
+.gridCell > * {
+  flex: 1;
+  width: 100%;
+}

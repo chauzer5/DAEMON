@@ -1,0 +1,126 @@
+/* ── Lava Lamp Background ── */
+
+.container {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .container {
+    display: none;
+  }
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  will-change: transform;
+  opacity: var(--lava-blob-opacity, 0.12);
+}
+
+/* Blob 1 — top-left area, large */
+.blob1 {
+  width: 350px;
+  height: 350px;
+  background: var(--lava-blob-1, rgba(0, 255, 245, 0.3));
+  top: 10%;
+  left: 5%;
+  animation: blob-drift-1 28s ease-in-out infinite;
+}
+
+/* Blob 2 — bottom-right area, larger */
+.blob2 {
+  width: 400px;
+  height: 400px;
+  background: var(--lava-blob-2, rgba(255, 44, 241, 0.3));
+  bottom: 15%;
+  right: 10%;
+  animation: blob-drift-2 34s ease-in-out infinite;
+}
+
+/* Blob 3 — center area, medium */
+.blob3 {
+  width: 280px;
+  height: 280px;
+  background: var(--lava-blob-3, rgba(176, 38, 255, 0.3));
+  top: 40%;
+  left: 35%;
+  animation: blob-drift-3 24s ease-in-out infinite;
+}
+
+/* Blob 4 — top-right area, large dim */
+.blob4 {
+  width: 320px;
+  height: 320px;
+  background: var(--lava-blob-4, rgba(0, 255, 245, 0.2));
+  top: 5%;
+  right: 20%;
+  animation: blob-drift-4 38s ease-in-out infinite;
+}
+
+/* ── Drift keyframes — slow looping paths ── */
+
+@keyframes blob-drift-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(80px, 60px) scale(1.1);
+  }
+  50% {
+    transform: translate(40px, 120px) scale(0.95);
+  }
+  75% {
+    transform: translate(-30px, 50px) scale(1.05);
+  }
+}
+
+@keyframes blob-drift-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(-70px, -50px) scale(1.08);
+  }
+  50% {
+    transform: translate(-100px, 30px) scale(0.92);
+  }
+  75% {
+    transform: translate(-20px, -80px) scale(1.04);
+  }
+}
+
+@keyframes blob-drift-3 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(60px, -80px) scale(1.12);
+  }
+  66% {
+    transform: translate(-50px, 40px) scale(0.9);
+  }
+}
+
+@keyframes blob-drift-4 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  20% {
+    transform: translate(-60px, 70px) scale(1.06);
+  }
+  40% {
+    transform: translate(30px, 100px) scale(0.94);
+  }
+  60% {
+    transform: translate(80px, 40px) scale(1.1);
+  }
+  80% {
+    transform: translate(20px, -30px) scale(0.98);
+  }
+}
