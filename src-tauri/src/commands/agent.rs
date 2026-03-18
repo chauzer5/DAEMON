@@ -4,6 +4,7 @@ use std::process::Stdio;
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
+use regex::Regex;
 use tauri::Emitter;
 use tokio::io::{AsyncBufReadExt, BufReader};
 
@@ -12,6 +13,9 @@ static PTY_REGISTRY: Lazy<Mutex<HashMap<String, PtyHandle>>> = Lazy::new(|| Mute
 
 // Global agent process registry — maps task_id to child process handle
 static AGENT_REGISTRY: Lazy<Mutex<HashMap<String, tokio::process::Child>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+
+// PID registry for std::process children (used by run_interactive_agent)
+static PID_REGISTRY: Lazy<Mutex<HashMap<String, u32>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 // Writer registry for interactive agents — maps pty_id to a reusable writer
 static PTY_WRITER_REGISTRY: Lazy<Mutex<HashMap<String, Box<dyn std::io::Write + Send>>>> =
@@ -33,6 +37,11 @@ struct AgentOutput {
 struct AgentQuestion {
     task_id: String,
     question: String,
+}
+
+#[derive(Clone, serde::Serialize)]
+struct AgentTurnComplete {
+    task_id: String,
 }
 
 #[derive(Clone, Default, serde::Deserialize)]
@@ -266,9 +275,8 @@ pub async fn run_agent_command(
     Ok(())
 }
 
-/// Respond to a pending agent question. The response is stored so a future
-/// interactive agent (PTY-based) can consume it. For now we emit an event so
-/// Respond to an interactive agent's question by writing to its PTY stdin.
+/// Respond to an interactive agent by writing to its stdin.
+/// For stream-json agents, sends a JSON user message.
 /// Also accepts task_id/question_id so the frontend store can track the answer.
 #[tauri::command]
 pub async fn respond_to_agent(
@@ -277,18 +285,21 @@ pub async fn respond_to_agent(
     response: String,
 ) -> Result<(), String> {
     use std::io::Write;
-    // Try writing to the PTY writer for this task
     let mut registry = PTY_WRITER_REGISTRY.lock().unwrap();
     if let Some(writer) = registry.get_mut(&task_id) {
-        let mut message = response;
+        // Send as stream-json formatted user message
+        let json_msg = serde_json::json!({
+            "type": "user",
+            "content": response
+        });
+        let mut message = serde_json::to_string(&json_msg).map_err(|e| e.to_string())?;
         message.push('\n');
         writer
             .write_all(message.as_bytes())
-            .map_err(|e| format!("Failed to write to PTY: {}", e))?;
-        writer.flush().map_err(|e| format!("Failed to flush PTY: {}", e))?;
+            .map_err(|e| format!("Failed to write to stdin: {}", e))?;
+        writer.flush().map_err(|e| format!("Failed to flush stdin: {}", e))?;
         Ok(())
     } else {
-        // Agent might not be PTY-based or already finished
         Ok(())
     }
 }
@@ -296,17 +307,33 @@ pub async fn respond_to_agent(
 /// Kill a running agent command process.
 #[tauri::command]
 pub async fn kill_agent_command(task_id: String) -> Result<(), String> {
+    // Try tokio process registry first (run_agent_command)
     let child = {
         let mut registry = AGENT_REGISTRY.lock().unwrap();
         registry.remove(&task_id)
     };
     if let Some(mut child) = child {
         let _ = child.start_kill();
-        let _ = child.wait().await; // reap the process
-        Ok(())
-    } else {
-        Ok(())
+        let _ = child.wait().await;
+        return Ok(());
     }
+
+    // Try PID registry (run_interactive_agent with std::process)
+    let pid = {
+        let mut pid_reg = PID_REGISTRY.lock().unwrap();
+        pid_reg.remove(&task_id)
+    };
+    if let Some(pid) = pid {
+        // Kill the process tree
+        let _ = std::process::Command::new("kill")
+            .arg("-TERM")
+            .arg(pid.to_string())
+            .status();
+        // Also clean up the writer so respond_to_agent stops
+        let mut writer_reg = PTY_WRITER_REGISTRY.lock().unwrap();
+        writer_reg.remove(&task_id);
+    }
+    Ok(())
 }
 
 /// Spawn Claude CLI in a real PTY for full terminal output with ANSI colors.
@@ -424,8 +451,16 @@ pub async fn write_agent_pty(pty_id: String, data: String) -> Result<(), String>
 /// Kill a running PTY process.
 #[tauri::command]
 pub async fn kill_agent_pty(pty_id: String) -> Result<(), String> {
-    let mut registry = PTY_REGISTRY.lock().unwrap();
-    if let Some(mut handle) = registry.remove(&pty_id) {
+    let handle = {
+        let mut registry = PTY_REGISTRY.lock().unwrap();
+        registry.remove(&pty_id)
+    };
+    // Also clean up the writer registry
+    {
+        let mut writer_reg = PTY_WRITER_REGISTRY.lock().unwrap();
+        writer_reg.remove(&pty_id);
+    }
+    if let Some(mut handle) = handle {
         let _ = handle.child.kill();
         Ok(())
     } else {
@@ -433,10 +468,10 @@ pub async fn kill_agent_pty(pty_id: String) -> Result<(), String> {
     }
 }
 
-/// Spawn Claude CLI in an interactive PTY session that supports the SendUserMessage tool.
-/// Uses `--brief` to enable the agent to ask the user questions via stdin.
-/// Emits `agent-output` for all output and `agent-question` when the agent asks a question.
-/// Returns immediately — use `respond_to_agent` to send replies.
+/// Spawn Claude CLI as an interactive agent using the same tokio::process pattern
+/// as run_agent_command (which is proven to work), but with stream-json output
+/// for structured streaming and MCP/OTEL isolation.
+/// Blocks until the process completes (same as run_agent_command).
 #[tauri::command]
 pub async fn run_interactive_agent(
     app: tauri::AppHandle,
@@ -447,29 +482,26 @@ pub async fn run_interactive_agent(
 ) -> Result<(), String> {
     let opts = options.unwrap_or_default();
 
-    let pty_system = native_pty_system();
+    let mut cmd = tokio::process::Command::new("/Users/ajholloway/.local/bin/claude");
+    cmd.current_dir("/Users/ajholloway/Programming");
 
-    let pair = pty_system
-        .openpty(PtySize {
-            rows: 40,
-            cols: 120,
-            pixel_width: 0,
-            pixel_height: 0,
-        })
-        .map_err(|e| format!("Failed to open PTY: {}", e))?;
+    // Disable OTEL telemetry to prevent 1Password blocking
+    cmd.env("CLAUDE_CODE_ENABLE_TELEMETRY", "0");
+    cmd.env("OTEL_METRICS_EXPORTER", "");
+    cmd.env("OTEL_LOGS_EXPORTER", "");
+    cmd.env("OTEL_EXPORTER_OTLP_ENDPOINT", "");
 
-    let prompt = if args.trim().is_empty() {
-        command.clone()
-    } else {
-        format!("{} {}", command, args)
-    };
+    cmd.arg("--print");
+    cmd.arg("--output-format").arg("stream-json");
+    cmd.arg("--verbose");
+    cmd.arg("--include-partial-messages");
 
-    let mut cmd = CommandBuilder::new("/Users/ajholloway/.local/bin/claude");
+    // Disable otelHeadersHelper and use no MCP servers
+    cmd.arg("--settings").arg(r#"{"otelHeadersHelper":""}"#);
+    cmd.arg("--mcp-config").arg(r#"{"mcpServers":{}}"#);
+    cmd.arg("--strict-mcp-config");
 
-    // Use --brief to enable the SendUserMessage tool (interactive question support)
-    cmd.arg("--brief");
-
-    // Model selection
+    // Model
     let effective_model = opts.model.as_deref();
     if let Some(m) = effective_model {
         let model_id = match m {
@@ -477,183 +509,164 @@ pub async fn run_interactive_agent(
             "haiku" => "claude-haiku-4-5-20251001",
             _ => "claude-sonnet-4-6",
         };
-        cmd.arg("--model");
-        cmd.arg(model_id);
+        cmd.arg("--model").arg(model_id);
     }
 
-    // System prompt
     if let Some(ref sp) = opts.system_prompt {
-        cmd.arg("--system-prompt");
-        cmd.arg(sp);
+        cmd.arg("--system-prompt").arg(sp);
     }
 
-    // Allowed tools
     if let Some(ref tools) = opts.allowed_tools {
         if !tools.is_empty() {
-            cmd.arg("--allowedTools");
-            for tool in tools {
-                cmd.arg(tool);
-            }
+            cmd.arg("--allowedTools").args(tools);
         }
     }
 
-    // Denied tools
     if let Some(ref tools) = opts.denied_tools {
         if !tools.is_empty() {
-            cmd.arg("--disallowedTools");
-            for tool in tools {
-                cmd.arg(tool);
-            }
+            cmd.arg("--disallowedTools").args(tools);
         }
     }
 
-    // Budget cap
     if let Some(budget) = opts.max_budget_usd {
-        cmd.arg("--max-budget-usd");
-        cmd.arg(budget.to_string());
+        cmd.arg("--max-budget-usd").arg(budget.to_string());
     }
 
-    // Disable slash commands
     if opts.disable_slash_commands.unwrap_or(false) {
         cmd.arg("--disable-slash-commands");
     }
 
+    cmd.arg("--dangerously-skip-permissions");
+
+    let prompt = if args.trim().is_empty() {
+        command.clone()
+    } else {
+        format!("{} {}", command, args)
+    };
     cmd.arg(&prompt);
 
-    let child = pair
-        .slave
-        .spawn_command(cmd)
-        .map_err(|e| format!("Failed to spawn in PTY: {}", e))?;
+    cmd.stdout(Stdio::piped());
+    cmd.stderr(Stdio::piped());
 
-    // Claim the writer up front so respond_to_agent can reuse it
-    let writer = pair
-        .master
-        .take_writer()
-        .map_err(|e| format!("Failed to get PTY writer: {}", e))?;
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| format!("Failed to spawn claude: {}", e))?;
 
-    // Get a reader from the master side
-    let mut reader = pair
-        .master
-        .try_clone_reader()
-        .map_err(|e| format!("Failed to clone PTY reader: {}", e))?;
+    let stdout = child.stdout.take().ok_or("No stdout")?;
+    let stderr = child.stderr.take().ok_or("No stderr")?;
 
-    // Store the PTY handle and its writer
+    // Store the child process so it can be killed
     {
-        let mut pty_reg = PTY_REGISTRY.lock().unwrap();
-        pty_reg.insert(
-            task_id.clone(),
-            PtyHandle {
-                master: pair.master,
-                child,
-            },
-        );
-    }
-    {
-        let mut writer_reg = PTY_WRITER_REGISTRY.lock().unwrap();
-        writer_reg.insert(task_id.clone(), writer);
+        let mut registry = AGENT_REGISTRY.lock().unwrap();
+        registry.insert(task_id.clone(), child);
     }
 
-    // Stream PTY output in a background thread, scanning for question patterns
     let app_clone = app.clone();
     let tid = task_id.clone();
-    tokio::task::spawn_blocking(move || {
-        let mut buf = [0u8; 4096];
-        // Accumulator for partial lines — used for question detection
-        let mut line_buf = String::new();
-        // Multi-line accumulator for detecting the full question block
-        let mut question_accumulator = String::new();
-        let mut in_question_block = false;
 
-        loop {
-            match reader.read(&mut buf) {
-                Ok(0) => break,
-                Ok(n) => {
-                    let text = String::from_utf8_lossy(&buf[..n]).to_string();
+    // Stream stdout — parse stream-json events for text deltas
+    let stdout_handle = tokio::spawn(async move {
+        let reader = BufReader::new(stdout);
+        let mut lines = reader.lines();
 
-                    // Emit raw output
-                    let _ = app_clone.emit(
-                        "agent-output",
-                        AgentOutput {
-                            task_id: tid.clone(),
-                            line: text.clone(),
-                            done: false,
-                        },
-                    );
+        while let Ok(Some(line)) = lines.next_line().await {
+            if line.trim().is_empty() {
+                continue;
+            }
 
-                    // Question detection — scan each character for newlines
-                    for ch in text.chars() {
-                        if ch == '\n' || ch == '\r' {
-                            let trimmed = line_buf.trim().to_string();
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&line) {
+                let msg_type = json["type"].as_str().unwrap_or("");
 
-                            if !trimmed.is_empty() {
-                                // Detect start of a question block
-                                if trimmed.contains("wants to send you a message")
-                                    || trimmed.contains("SendUserMessage")
-                                {
-                                    in_question_block = true;
-                                    question_accumulator.clear();
-                                }
-
-                                if in_question_block {
-                                    // Detect the prompt line that ends the block
-                                    if trimmed.contains("Type your response")
-                                        || trimmed.contains("press Enter to skip")
-                                    {
-                                        // question_accumulator holds the message body
-                                        let question = question_accumulator.trim().to_string();
-                                        if !question.is_empty() {
-                                            let _ = app_clone.emit(
-                                                "agent-question",
-                                                AgentQuestion {
-                                                    task_id: tid.clone(),
-                                                    question,
-                                                },
-                                            );
-                                        }
-                                        in_question_block = false;
-                                        question_accumulator.clear();
-                                    } else if !trimmed.contains("wants to send you a message")
-                                        && !trimmed.contains("SendUserMessage")
-                                    {
-                                        // Body line of the question
-                                        if !question_accumulator.is_empty() {
-                                            question_accumulator.push('\n');
-                                        }
-                                        question_accumulator.push_str(&trimmed);
-                                    }
-                                }
+                match msg_type {
+                    "stream_event" => {
+                        let event_type = json["event"]["type"].as_str().unwrap_or("");
+                        if event_type == "content_block_delta" {
+                            if let Some(text) = json["event"]["delta"]["text"].as_str() {
+                                let _ = app_clone.emit(
+                                    "agent-output",
+                                    AgentOutput {
+                                        task_id: tid.clone(),
+                                        line: text.to_string(),
+                                        done: false,
+                                    },
+                                );
                             }
-
-                            line_buf.clear();
-                        } else {
-                            line_buf.push(ch);
                         }
                     }
+                    "assistant" => {
+                        // Full message — already streamed via deltas
+                    }
+                    "result" => {
+                        // Completion
+                    }
+                    _ => {}
                 }
-                Err(_) => break,
+            } else {
+                // Non-JSON line — emit as-is (like run_agent_command does)
+                let _ = app_clone.emit(
+                    "agent-output",
+                    AgentOutput {
+                        task_id: tid.clone(),
+                        line,
+                        done: false,
+                    },
+                );
             }
         }
+    });
 
-        // Signal completion
-        let _ = app_clone.emit(
-            "agent-output",
-            AgentOutput {
-                task_id: tid.clone(),
-                line: String::new(),
-                done: true,
-            },
-        );
+    let app_clone2 = app.clone();
+    let tid2 = task_id.clone();
 
-        // Cleanup both registries
-        {
-            let mut pty_reg = PTY_REGISTRY.lock().unwrap();
-            pty_reg.remove(&tid);
-        }
-        {
-            let mut writer_reg = PTY_WRITER_REGISTRY.lock().unwrap();
-            writer_reg.remove(&tid);
+    // Stream stderr
+    let stderr_handle = tokio::spawn(async move {
+        let reader = BufReader::new(stderr);
+        let mut lines = reader.lines();
+        while let Ok(Some(line)) = lines.next_line().await {
+            let _ = app_clone2.emit(
+                "agent-output",
+                AgentOutput {
+                    task_id: tid2.clone(),
+                    line: format!("[stderr] {}", line),
+                    done: false,
+                },
+            );
         }
     });
+
+    // Wait for streams to finish
+    let _ = stdout_handle.await;
+    let _ = stderr_handle.await;
+
+    // Retrieve and wait on child process
+    let maybe_child = {
+        let mut registry = AGENT_REGISTRY.lock().unwrap();
+        registry.remove(&task_id)
+    };
+
+    let status = match maybe_child {
+        Some(mut child) => child.wait().await.map_err(|e| e.to_string())?,
+        None => {
+            let _ = app.emit(
+                "agent-output",
+                AgentOutput {
+                    task_id: task_id.clone(),
+                    line: String::new(),
+                    done: true,
+                },
+            );
+            return Ok(());
+        }
+    };
+
+    let _ = app.emit(
+        "agent-output",
+        AgentOutput {
+            task_id: task_id.clone(),
+            line: String::new(),
+            done: true,
+        },
+    );
 
     Ok(())
 }

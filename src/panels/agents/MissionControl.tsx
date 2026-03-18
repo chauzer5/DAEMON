@@ -15,8 +15,10 @@ import { useShallow } from "zustand/react/shallow";
 import { HoverTooltip } from "../../components/ui/HoverTooltip";
 import { NeonButton } from "../../components/ui/NeonButton";
 import { usePersonaStore } from "../../stores/personaStore";
+import { useChatStore } from "../../stores/chatStore";
 import { getPersonaById } from "../../config/personas";
 import { PersonaPicker } from "./PersonaPicker";
+import { AgentChat } from "./AgentChat";
 import type { MissionTask, PersonaRunStatus } from "../../config/personaTypes";
 import styles from "./MissionControl.module.css";
 
@@ -838,6 +840,9 @@ export function MissionControl() {
       activeSingleRun: s.activeSingleRun,
     })),
   );
+  const conversations = useChatStore((s) => s.conversations);
+  const activeConversationId = useChatStore((s) => s.activeConversationId);
+  const dismissSingleRun = usePersonaStore((s) => s.dismissSingleRun);
   const startMission = usePersonaStore((s) => s.startMission);
   const clearSquad = usePersonaStore((s) => s.clearSquad);
   const [taskDescription, setTaskDescription] = useState("");
@@ -848,10 +853,28 @@ export function MissionControl() {
     setTaskDescription("");
   };
 
+  // Determine if we should show AgentChat:
+  // 1. Active single run with a chat conversation
+  // 2. Active conversation navigated from StatusBar
+  const chatRunId = activeSingleRun?.id && conversations[activeSingleRun.id]
+    ? activeSingleRun.id
+    : activeConversationId && conversations[activeConversationId]
+      ? activeConversationId
+      : null;
+
+  const handleChatBack = () => {
+    dismissSingleRun();
+    useChatStore.getState().setActiveConversation(null);
+  };
+
   return (
     <div className={styles.missionControl}>
       <AnimatePresence mode="wait">
-        {activeSingleRun ? (
+        {chatRunId ? (
+          <motion.div key="agent-chat" {...fadeSlideUp} transition={springTransition}>
+            <AgentChat conversationId={chatRunId} onBack={handleChatBack} />
+          </motion.div>
+        ) : activeSingleRun ? (
           <motion.div key="single-output" {...fadeSlideUp} transition={springTransition}>
             <SingleAgentOutput />
           </motion.div>

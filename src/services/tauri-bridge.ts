@@ -86,3 +86,35 @@ export function writeAgentPty(ptyId: string, data: string): Promise<void> {
 export function killAgentPty(ptyId: string): Promise<void> {
   return invoke("kill_agent_pty", { ptyId });
 }
+
+// ── Interactive agent functions ──
+
+export interface InteractiveAgentOptions {
+  model?: string;
+  systemPrompt?: string;
+  allowedTools?: string[] | null;
+  deniedTools?: string[] | null;
+  maxBudgetUsd?: number;
+  disableSlashCommands?: boolean;
+}
+
+export function runInteractiveAgent(
+  taskId: string,
+  command: string,
+  args: string,
+  options?: InteractiveAgentOptions,
+): Promise<void> {
+  return invoke("run_interactive_agent", { taskId, command, args, options });
+}
+
+export function respondToAgent(
+  taskId: string,
+  questionId: string | null,
+  response: string,
+): Promise<void> {
+  return invoke("respond_to_agent", { taskId, questionId, response });
+}
+
+export function killInteractiveAgent(taskId: string): Promise<void> {
+  return invoke("kill_agent_pty", { ptyId: taskId });
+}

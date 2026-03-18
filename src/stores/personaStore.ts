@@ -11,6 +11,7 @@ import type {
 } from "../config/personaTypes";
 import { getPersonaById } from "../config/personas";
 import { useAgentStore } from "./agentStore";
+import { useChatStore } from "./chatStore";
 
 interface AgentOutput {
   task_id: string;
@@ -239,8 +240,9 @@ export const usePersonaStore = create<PersonaState>()(
       cancelSingleAgent: () => {
         const state = get();
         if (!state.activeSingleRun) return;
-        // Kill the running agent process
+        // Kill the running interactive agent process
         invoke("kill_agent_command", { taskId: state.activeSingleRun.id }).catch(() => {});
+        useChatStore.getState().markFailed(state.activeSingleRun.id);
         useAgentStore.getState().completeTask(state.activeSingleRun.id, "failed");
         set((s) => {
           if (!s.activeSingleRun) return s;
@@ -377,6 +379,16 @@ function isMissionCancelled(): boolean {
   return usePersonaStore.getState().activeMission === null;
 }
 
+// ── Turn Complete Listener ──
+
+interface AgentTurnCompletePayload {
+  task_id: string;
+}
+
+listen<AgentTurnCompletePayload>("agent-turn-complete", (event) => {
+  useChatStore.getState().finalizeAgentTurn(event.payload.task_id);
+}).catch(() => {});
+
 // ── Single Agent Runner ──
 
 async function runSingleAgent(run: SingleAgentRun) {
@@ -384,6 +396,9 @@ async function runSingleAgent(run: SingleAgentRun) {
   if (!persona) return;
 
   let output = "";
+
+  // Initialize chat conversation
+  useChatStore.getState().startConversation(run.id, run.personaId, run.prompt);
 
   // Register in agentStore so TerminalDrawer can show the live stream
   useAgentStore.getState().addTask({
@@ -397,19 +412,23 @@ async function runSingleAgent(run: SingleAgentRun) {
   // Await listener registration before invoking to avoid missing early events
   const unlisten = await listen<AgentOutput>("agent-output", (event) => {
     if (event.payload.task_id === run.id) {
-      output += event.payload.line + "\n";
+      if (event.payload.done) return;
+      output += event.payload.line;
       usePersonaStore.setState((s) => ({
         activeSingleRun: s.activeSingleRun
           ? { ...s.activeSingleRun, output }
           : null,
       }));
+      // Feed into chat store
+      useChatStore.getState().appendAgentChunk(run.id, event.payload.line);
     }
   });
 
   let status: "completed" | "failed" = "completed";
   let error: string | undefined;
   try {
-    await invoke("run_agent_command", {
+    // run_interactive_agent now blocks until process completes (same as run_agent_command)
+    await invoke("run_interactive_agent", {
       taskId: run.id,
       command: "",
       args: run.prompt,
@@ -427,21 +446,14 @@ async function runSingleAgent(run: SingleAgentRun) {
     status = "failed";
   }
 
-  // Check if output contains stderr errors (overloaded, rate limit, etc.)
-  if (!error && output.includes("[stderr]")) {
-    const stderrLines = output.split("\n").filter((l) => l.startsWith("[stderr]"));
-    const hasRealError = stderrLines.some(
-      (l) => l.includes("Error") || l.includes("error") || l.includes("overloaded") || l.includes("rate limit"),
-    );
-    if (hasRealError && !output.replace(/\[stderr\].*\n?/g, "").trim()) {
-      // Only stderr output, no real content — this was an error
-      error = stderrLines.map((l) => l.replace("[stderr] ", "")).join("\n");
-      status = "failed";
-    }
-  }
-
   unlisten();
   useAgentStore.getState().completeTask(run.id, status === "failed" ? "failed" : "completed");
+
+  if (status === "failed") {
+    useChatStore.getState().markFailed(run.id);
+  } else {
+    useChatStore.getState().markCompleted(run.id);
+  }
 
   const completedRun: SingleAgentRun = {
     ...run,
@@ -467,6 +479,9 @@ async function runBackgroundAgent(run: SingleAgentRun) {
   let output = "";
   let error: string | undefined;
 
+  // Initialize chat conversation
+  useChatStore.getState().startConversation(run.id, run.personaId, run.prompt);
+
   useAgentStore.getState().addTask({
     id: run.id,
     command: `[${persona.name}]`,
@@ -477,18 +492,20 @@ async function runBackgroundAgent(run: SingleAgentRun) {
 
   const unlisten = await listen<AgentOutput>("agent-output", (event) => {
     if (event.payload.task_id === run.id) {
-      output += event.payload.line + "\n";
+      if (event.payload.done) return;
+      output += event.payload.line;
       usePersonaStore.setState((s) => ({
         backgroundRuns: s.backgroundRuns.map((r) =>
           r.id === run.id ? { ...r, output } : r,
         ),
       }));
+      useChatStore.getState().appendAgentChunk(run.id, event.payload.line);
     }
   });
 
   let status: "completed" | "failed" = "completed";
   try {
-    await invoke("run_agent_command", {
+    await invoke("run_interactive_agent", {
       taskId: run.id,
       command: "",
       args: run.prompt,
@@ -508,6 +525,12 @@ async function runBackgroundAgent(run: SingleAgentRun) {
 
   unlisten();
   useAgentStore.getState().completeTask(run.id, status === "failed" ? "failed" : "completed");
+
+  if (status === "failed") {
+    useChatStore.getState().markFailed(run.id);
+  } else {
+    useChatStore.getState().markCompleted(run.id);
+  }
 
   const completedRun: SingleAgentRun = {
     ...run,

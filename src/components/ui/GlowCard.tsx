@@ -52,19 +52,6 @@ const hoverState = {
   },
 };
 
-/** Tap/press state: satisfying "press into screen" feel */
-const tapState = {
-  scale: 0.975,
-  y: 1,
-  boxShadow:
-    "0 0 6px rgba(176,38,255,0.5), 0 0 14px rgba(0,255,245,0.25), inset 0 0 16px rgba(176,38,255,0.1)",
-  transition: {
-    type: "spring" as const,
-    stiffness: 600,
-    damping: 28,
-  },
-};
-
 /** Urgent hover: brighter magenta glow on press */
 const urgentHoverState = {
   scale: 1.012,
@@ -79,17 +66,6 @@ const urgentHoverState = {
   },
 };
 
-const urgentTapState = {
-  scale: 0.975,
-  y: 1,
-  boxShadow:
-    "0 0 8px rgba(255,44,241,0.7), 0 0 18px rgba(255,44,241,0.35), inset 0 0 16px rgba(255,44,241,0.12)",
-  transition: {
-    type: "spring" as const,
-    stiffness: 600,
-    damping: 28,
-  },
-};
 
 export function GlowCard({ children, urgent, className, onClick, index = 0 }: GlowCardProps) {
   const { theme } = useTheme();

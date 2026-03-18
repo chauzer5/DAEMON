@@ -99,6 +99,7 @@ pub fn run() {
             settings::save_setting,
             settings::test_gitlab_connection,
             settings::test_linear_connection,
+            settings::test_launchdarkly_connection,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

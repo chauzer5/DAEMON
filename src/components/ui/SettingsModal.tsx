@@ -10,6 +10,7 @@ import styles from "./SettingsModal.module.css";
 interface AppSettings {
   gitlab_pat: string | null;
   linear_api_key: string | null;
+  launchdarkly_api_key: string | null;
   gitlab_group_id: string;
   linear_team_id: string;
 }
@@ -382,6 +383,14 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                   currentValue={settings.linear_api_key}
                   placeholder="lin_api_xxxxxxxxxxxxxxxxxxxx"
                   testFn="test_linear_connection"
+                  onSaved={loadSettings}
+                />
+                <CredentialRow
+                  label="LaunchDarkly API Key"
+                  settingKey="launchdarkly_api_key"
+                  currentValue={settings.launchdarkly_api_key}
+                  placeholder="api-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                  testFn="test_launchdarkly_connection"
                   onSaved={loadSettings}
                 />
               </>

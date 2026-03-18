@@ -15,6 +15,7 @@ export interface PendingMR {
 interface LayoutState {
   activePanel: PanelId;
   sidebarCollapsed: boolean;
+  booting: boolean;
   pendingThread: PendingThread | null;
   pendingMR: PendingMR | null;
 
@@ -25,6 +26,7 @@ interface LayoutState {
   canGoForward: boolean;
 
   setActivePanel: (id: PanelId) => void;
+  setBooting: (booting: boolean) => void;
   openSlackThread: (thread: PendingThread) => void;
   clearPendingThread: () => void;
   openMR: (mr: PendingMR) => void;
@@ -37,12 +39,15 @@ interface LayoutState {
 export const useLayoutStore = create<LayoutState>((set, get) => ({
   activePanel: "hub",
   sidebarCollapsed: false,
+  booting: true,
   pendingThread: null,
   pendingMR: null,
   historyBack: [],
   historyForward: [],
   canGoBack: false,
   canGoForward: false,
+
+  setBooting: (booting) => set({ booting }),
 
   setActivePanel: (id) => {
     const { activePanel, historyBack } = get();

@@ -91,6 +91,7 @@ export function Sidebar() {
   const { theme } = useTheme();
   const isLcars = theme.layoutStyle === "lcars";
   const { activePanel, setActivePanel } = useLayoutStore();
+  const booting = useLayoutStore((s) => s.booting);
 
   const [revealed, setRevealed] = useState(false);
   const [proximity, setProximity] = useState(0); // 0 = far, 1 = at edge
@@ -98,7 +99,7 @@ export function Sidebar() {
 
   // Track cursor proximity to left edge globally
   useEffect(() => {
-    if (revealed) return;
+    if (revealed || booting) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       if (e.clientX < APPROACH_ZONE) {
@@ -111,13 +112,14 @@ export function Sidebar() {
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [revealed, proximity]);
+  }, [revealed, proximity, booting]);
 
   const revealSidebar = useCallback(() => {
+    if (booting) return;
     clearTimeout(hideTimer.current);
     setRevealed(true);
     setProximity(0);
-  }, []);
+  }, [booting]);
 
   const startHide = useCallback(() => {
     clearTimeout(hideTimer.current);
@@ -230,6 +232,9 @@ export function Sidebar() {
   const revealedBoxShadow = isLcars
     ? "4px 0 24px rgba(0, 0, 0, 0.8)"
     : "4px 0 30px rgba(0, 0, 0, 0.7), 2px 0 15px rgba(176, 38, 255, 0.25), 0 0 60px rgba(0, 255, 245, 0.08)";
+
+  // Don't render anything during boot — hot zone z-index is above boot overlay
+  if (booting) return null;
 
   return (
     <>

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import styles from "./StatusBar.module.css";
 import { useTheme } from "../../themes";
 import { usePersonaStore } from "../../stores/personaStore";
+import { useChatStore } from "../../stores/chatStore";
 import { useLayoutStore } from "../../stores/layoutStore";
 import { getPersonaById } from "../../config/personas";
 import { useSlackSections, useMergeRequests, useLinearIssues } from "../../hooks";
@@ -145,8 +146,23 @@ interface QuestionChipProps {
 function QuestionChip({ agent, persona }: QuestionChipProps) {
   const answerQuestion = usePersonaStore((s) => s.answerQuestion);
   const dismissQuestion = usePersonaStore((s) => s.dismissQuestion);
+  const setActivePanel = useLayoutStore((s) => s.setActivePanel);
+  const conversations = useChatStore((s) => s.conversations);
   const [answer, setAnswer] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Find the task ID associated with this question for chat navigation
+  const question = usePersonaStore((s) =>
+    s.pendingQuestions.find((q) => q.id === agent.questionId),
+  );
+  const taskId = question?.taskId;
+
+  const handleNavigateToChat = useCallback(() => {
+    if (taskId && conversations[taskId]) {
+      useChatStore.getState().setActiveConversation(taskId);
+      setActivePanel("agents");
+    }
+  }, [taskId, conversations, setActivePanel]);
 
   const handleSend = useCallback(() => {
     const trimmed = answer.trim();
@@ -178,6 +194,7 @@ function QuestionChip({ agent, persona }: QuestionChipProps) {
       exit={{ opacity: 0, scale: 0, width: 0 }}
       transition={agentSpring}
       style={{ "--agent-color": persona.color } as React.CSSProperties}
+      onClick={handleNavigateToChat}
     >
       {persona.avatar && (
         <img
