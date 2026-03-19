@@ -22,6 +22,21 @@ async function notify(title: string, body: string) {
   sendNotification({ title, body });
 }
 
+const notifiedThreadIds = new Set<string>();
+
+export function notifyWatchedThread(
+  threadSummary: string,
+  channelName: string,
+  sender: string,
+  message: string,
+) {
+  const key = `thread-${channelName}-${sender}-${message.slice(0, 30)}`;
+  if (notifiedThreadIds.has(key)) return;
+  notifiedThreadIds.add(key);
+  const preview = message.length > 100 ? message.slice(0, 100) + "…" : message;
+  notify(`${channelName}: ${threadSummary}`, `${sender}: ${preview}`);
+}
+
 export function checkMRNotifications(
   prevMRs: EnrichedMergeRequest[] | undefined,
   newMRs: EnrichedMergeRequest[],

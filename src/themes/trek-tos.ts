@@ -67,6 +67,13 @@ export const trekTosTheme: ThemeDefinition = {
     "--font-display": '"Orbitron", sans-serif',
     "--font-body": '"Rajdhani", sans-serif',
     "--font-mono": '"JetBrains Mono Variable", monospace',
+
+    // Lava lamp background
+    "--lava-blob-1": "rgba(247, 164, 29, 0.3)",
+    "--lava-blob-2": "rgba(91, 155, 213, 0.3)",
+    "--lava-blob-3": "rgba(192, 57, 43, 0.25)",
+    "--lava-blob-4": "rgba(247, 164, 29, 0.2)",
+    "--lava-blob-opacity": "0.10",
   },
 
   bootSequence: {
@@ -193,5 +200,6 @@ export const trekTosTheme: ThemeDefinition = {
     particles: true,
     dataStreams: false,
     chromaticAberration: false,
+    lavaLamp: true,
   },
 };

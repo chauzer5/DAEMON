@@ -1,11 +1,15 @@
 export interface SlackMessage {
   id: string;
   channel: string;
+  channel_id: string;
   sender: string;
   message: string;
   timestamp: string;
+  raw_ts: string;
   permalink: string;
   is_unread: boolean;
+  reply_count: number;
+  latest_reply_ts: string | null;
 }
 
 export interface SlackSection {
@@ -139,11 +143,19 @@ export interface LinearIssueDetail {
   status_type: string;
   priority: number;
   assignee: string | null;
+  team_id: string;
   team_key: string;
   labels: string[];
   url: string;
   comments: IssueComment[];
   updated_at: string;
+}
+
+export interface WorkflowState {
+  id: string;
+  name: string;
+  state_type: string;
+  position: number;
 }
 
 // ── Agents ──

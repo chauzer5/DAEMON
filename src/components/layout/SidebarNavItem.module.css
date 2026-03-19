@@ -1,0 +1,225 @@
+/* ── Cyberpunk Nav Item ── */
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  position: relative;
+}
+
+.navItem:hover {
+  color: var(--text-secondary);
+  background: rgba(176, 38, 255, 0.04);
+  border-color: rgba(176, 38, 255, 0.1);
+}
+
+.navItemActive {
+  color: var(--neon-cyan);
+  background: rgba(176, 38, 255, 0.08);
+  border-color: rgba(176, 38, 255, 0.25);
+  box-shadow: 0 0 8px rgba(176, 38, 255, 0.1),
+    inset 0 0 6px rgba(176, 38, 255, 0.04);
+}
+
+.navItemActive:hover {
+  color: var(--neon-cyan);
+  background: rgba(176, 38, 255, 0.1);
+  border-color: rgba(176, 38, 255, 0.3);
+}
+
+/* Active indicator bar on left */
+.navItemActive::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--neon-cyan);
+  border-radius: 1px;
+  box-shadow: 0 0 6px rgba(0, 255, 245, 0.5);
+}
+
+.iconWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon {
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 2px rgba(176, 38, 255, 0.2));
+}
+
+.activityDot {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 6px rgba(0, 255, 245, 0.6);
+  animation: activity-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes activity-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+.activityAvatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(0, 255, 245, 0.4);
+  box-shadow: 0 0 6px rgba(0, 255, 245, 0.3);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.navItemActive .icon {
+  filter: drop-shadow(0 0 4px rgba(0, 255, 245, 0.4));
+}
+
+.label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 8px;
+  background: var(--neon-magenta-dim);
+  color: var(--neon-magenta);
+  border: 1px solid rgba(255, 44, 241, 0.25);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Collapsed state ── */
+
+.collapsed {
+  justify-content: center;
+  padding: 10px;
+}
+
+.badgeCollapsed {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  min-width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--neon-magenta);
+  color: var(--bg-deepest);
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LCARS Nav Item — flat colored pills on black
+   ═══════════════════════════════════════════════════════════════════ */
+
+.navItemLcars {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  background: rgba(255, 153, 51, 0.15);
+  border: none;
+  border-radius: 0 12px 12px 0;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-align: left;
+  position: relative;
+}
+
+.navItemLcars:hover {
+  background: rgba(255, 153, 51, 0.3);
+  color: #ff9933;
+}
+
+.navItemLcarsActive {
+  background: #ff9933;
+  color: #000000;
+}
+
+.navItemLcarsActive:hover {
+  background: #ffaa55;
+  color: #000000;
+}
+
+.iconLcars {
+  flex-shrink: 0;
+  filter: none;
+}
+
+.labelLcars {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badgeLcars {
+  font-family: var(--font-display);
+  font-size: 10px;
+  padding: 1px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #000000;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.badgeCollapsedLcars {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-family: var(--font-display);
+  font-size: 8px;
+  min-width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: #cc3333;
+  color: #ffffff;
+  font-weight: 700;
+}

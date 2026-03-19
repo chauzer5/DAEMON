@@ -67,6 +67,13 @@ export const trekTngTheme: ThemeDefinition = {
     "--font-display": "'Antonio', sans-serif",
     "--font-body": "'Antonio', sans-serif",
     "--font-mono": '"JetBrains Mono Variable", monospace',
+
+    // Lava lamp background (disabled for LCARS — pure black aesthetic)
+    "--lava-blob-1": "rgba(255, 153, 51, 0.3)",
+    "--lava-blob-2": "rgba(204, 153, 102, 0.3)",
+    "--lava-blob-3": "rgba(153, 153, 255, 0.3)",
+    "--lava-blob-4": "rgba(255, 153, 51, 0.2)",
+    "--lava-blob-opacity": "0",
   },
 
   bootSequence: {
@@ -202,5 +209,6 @@ export const trekTngTheme: ThemeDefinition = {
     particles: false,
     dataStreams: false,
     chromaticAberration: false,
+    lavaLamp: false,
   },
 };

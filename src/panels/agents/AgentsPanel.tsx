@@ -13,6 +13,7 @@ import { listen } from "@tauri-apps/api/event";
 import Markdown from "react-markdown";
 import { Panel } from "../../components/layout/Panel";
 import { NeonButton } from "../../components/ui/NeonButton";
+import { MissionControl } from "./MissionControl";
 import styles from "./AgentsPanel.module.css";
 
 interface Command {
@@ -242,9 +243,12 @@ function TeamSection({
   );
 }
 
+type AgentMode = "commands" | "personas";
+
 let taskCounter = 0;
 
 export function AgentsPanel() {
+  const [mode, setMode] = useState<AgentMode>("personas");
   const [query, setQuery] = useState("");
   const [tasks, setTasks] = useState<RunningTask[]>([]);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -314,6 +318,26 @@ export function AgentsPanel() {
 
   return (
     <Panel title="Agent Teams" icon={Bot} badge={`${TEAMS.length} teams`}>
+      {/* Mode tabs */}
+      <div className={styles.modeTabs}>
+        <button
+          className={`${styles.modeTab} ${mode === "personas" ? styles.modeTabActive : ""}`}
+          onClick={() => setMode("personas")}
+        >
+          Personas
+        </button>
+        <button
+          className={`${styles.modeTab} ${mode === "commands" ? styles.modeTabActive : ""}`}
+          onClick={() => setMode("commands")}
+        >
+          Commands
+        </button>
+      </div>
+
+      {mode === "personas" ? (
+        <MissionControl />
+      ) : (
+      <>
       <div className={styles.researchBox}>
         <div className={styles.researchHeader}>
           <Search size={12} className={styles.researchIcon} />
@@ -363,6 +387,8 @@ export function AgentsPanel() {
           <TeamSection key={team.name} team={team} onRun={runCommand} />
         ))}
       </div>
+      </>
+      )}
     </Panel>
   );
 }

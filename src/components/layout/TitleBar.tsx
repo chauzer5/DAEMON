@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 import { MessageSquare, GitMerge, Bot, LayoutList, RefreshCw } from "lucide-react";
 import styles from "./TitleBar.module.css";
+=======
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useLayoutStore } from "../../stores/layoutStore";
+>>>>>>> fb88e2446a8d1d38d8da40bf2a2a73db0e4fb13c
 import { useTheme } from "../../themes";
+import styles from "./TitleBar.module.css";
 
+<<<<<<< HEAD
 export type PanelId = "slack" | "gitlab" | "agents" | "linear";
 
 interface TitleBarProps {
@@ -21,8 +28,33 @@ const PANELS: { id: PanelId; label: string; icon: typeof MessageSquare }[] = [
 const LCARS_BUTTON_COLORS = ["#ff9933", "#9999ff", "#9966cc", "#cc9966"];
 
 export function TitleBar({ openPanels, onTogglePanel, onResync }: TitleBarProps) {
+=======
+export function TitleBar() {
+>>>>>>> fb88e2446a8d1d38d8da40bf2a2a73db0e4fb13c
   const { theme } = useTheme();
   const isLcars = theme.layoutStyle === "lcars";
+  const { goBack, goForward, canGoBack, canGoForward } = useLayoutStore();
+
+  const navButtons = (
+    <div className={isLcars ? styles.navButtonsLcars : styles.navButtons}>
+      <button
+        className={isLcars ? styles.navBtnLcars : styles.navBtn}
+        onClick={goBack}
+        disabled={!canGoBack}
+        title="Go back"
+      >
+        <ChevronLeft size={16} />
+      </button>
+      <button
+        className={isLcars ? styles.navBtnLcars : styles.navBtn}
+        onClick={goForward}
+        disabled={!canGoForward}
+        title="Go forward"
+      >
+        <ChevronRight size={16} />
+      </button>
+    </div>
+  );
 
   if (isLcars) {
     return (
@@ -42,6 +74,7 @@ export function TitleBar({ openPanels, onTogglePanel, onResync }: TitleBarProps)
           </button>
         </div>
 
+<<<<<<< HEAD
         {/* Simplified bar: elbow color, toggles, fill, pill end */}
         <div className={styles.lcarsBarSegments} data-tauri-drag-region>
           <div className={styles.lcarsBarSeg} data-tauri-drag-region style={{ background: "#cc9966", flex: "0 0 60px" }} />
@@ -66,6 +99,16 @@ export function TitleBar({ openPanels, onTogglePanel, onResync }: TitleBarProps)
           <div className={styles.lcarsBarSeg} data-tauri-drag-region style={{ background: "#ff9933", flex: "1 1 auto" }} />
           {/* Pill-shaped right end */}
           <div className={styles.lcarsBarSeg} data-tauri-drag-region style={{ background: "#cc9966", flex: "0 0 40px", borderRadius: "0 22px 22px 0" }} />
+=======
+        {/* Nav buttons */}
+        {navButtons}
+
+        {/* Simplified bar: elbow color, fill, pill end */}
+        <div className={styles.lcarsBarSegments}>
+          <div className={styles.lcarsBarSeg} style={{ background: "#cc9966", flex: "0 0 60px" }} />
+          <div className={styles.lcarsBarSeg} style={{ background: "#ff9933", flex: "1 1 auto" }} />
+          <div className={styles.lcarsBarSeg} style={{ background: "#cc9966", flex: "0 0 40px", borderRadius: "0 22px 22px 0" }} />
+>>>>>>> fb88e2446a8d1d38d8da40bf2a2a73db0e4fb13c
         </div>
 
         {/* Logo — right side */}
@@ -82,6 +125,7 @@ export function TitleBar({ openPanels, onTogglePanel, onResync }: TitleBarProps)
 
   return (
     <div className={styles.titleBar} data-tauri-drag-region>
+<<<<<<< HEAD
       {/* Resync + Panel toggle buttons — left side */}
       <div className={styles.panelToggles}>
         <button
@@ -103,6 +147,10 @@ export function TitleBar({ openPanels, onTogglePanel, onResync }: TitleBarProps)
           </button>
         ))}
       </div>
+=======
+      {/* Nav buttons — left side after traffic lights */}
+      {navButtons}
+>>>>>>> fb88e2446a8d1d38d8da40bf2a2a73db0e4fb13c
 
       {/* Logo — right side */}
       <div className={styles.logoSection} data-tauri-drag-region>

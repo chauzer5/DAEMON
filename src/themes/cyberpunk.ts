@@ -61,12 +61,19 @@ export const cyberpunkTheme: ThemeDefinition = {
 
     // Panel glow
     "--panel-glow":
-      "0 0 1px rgba(0, 255, 245, 0.6), 0 0 4px rgba(0, 255, 245, 0.3), 0 0 12px rgba(0, 255, 245, 0.15), inset 0 0 8px rgba(0, 255, 245, 0.05)",
+      "0 0 1px rgba(176, 38, 255, 0.5), 0 0 4px rgba(176, 38, 255, 0.25), 0 0 12px rgba(0, 255, 245, 0.1), inset 0 0 8px rgba(176, 38, 255, 0.04)",
 
     // Typography
     "--font-display": '"Orbitron", sans-serif',
     "--font-body": '"Rajdhani", sans-serif',
     "--font-mono": '"JetBrains Mono Variable", monospace',
+
+    // Lava lamp background
+    "--lava-blob-1": "rgba(0, 255, 245, 0.3)",
+    "--lava-blob-2": "rgba(255, 44, 241, 0.3)",
+    "--lava-blob-3": "rgba(176, 38, 255, 0.3)",
+    "--lava-blob-4": "rgba(0, 255, 245, 0.2)",
+    "--lava-blob-opacity": "0.12",
   },
 
   bootSequence: {
@@ -189,5 +196,6 @@ export const cyberpunkTheme: ThemeDefinition = {
     particles: true,
     dataStreams: true,
     chromaticAberration: true,
+    lavaLamp: true,
   },
 };

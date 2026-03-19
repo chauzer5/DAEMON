@@ -7,12 +7,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: settingsOverlayIn 0.2s ease-out;
-}
-
-@keyframes settingsOverlayIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  /* animation handled by Framer Motion */
 }
 
 .modal {
@@ -28,19 +23,8 @@
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  animation: settingsModalIn 0.3s ease-out;
+  /* animation handled by Framer Motion */
   overflow: hidden;
-}
-
-@keyframes settingsModalIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
 }
 
 .modalHeader {

@@ -76,6 +76,8 @@ export interface AnimationFlags {
   dataStreams: boolean;
   /** RGB split / chromatic aberration on hover */
   chromaticAberration: boolean;
+  /** Lava lamp background blobs */
+  lavaLamp: boolean;
 }
 
 // ── CSS variable map ──
@@ -129,6 +131,13 @@ export interface ThemeCSSVariables {
   "--font-display": string;
   "--font-body": string;
   "--font-mono": string;
+
+  // Lava lamp background
+  "--lava-blob-1": string;
+  "--lava-blob-2": string;
+  "--lava-blob-3": string;
+  "--lava-blob-4": string;
+  "--lava-blob-opacity": string;
 }
 
 // ── Layout style ──

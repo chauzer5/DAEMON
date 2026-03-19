@@ -3,8 +3,9 @@
   border: 1px solid rgba(176, 38, 255, 0.12);
   border-radius: var(--radius-sm);
   padding: var(--gap-md);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease,
-    background 0.3s ease;
+  /* border-color + background transitions kept; transform/box-shadow
+     are now owned by Framer Motion whileHover / whileTap */
+  transition: background 0.3s ease;
   position: relative;
   overflow: hidden;
 }
@@ -20,8 +21,8 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(0, 255, 245, 0.06),
-    rgba(0, 255, 245, 0.02),
+    rgba(176, 38, 255, 0.06),
+    rgba(0, 255, 245, 0.03),
     transparent
   );
   transform: translateX(-100%) skewX(-15deg);
@@ -38,16 +39,14 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0, 255, 245, 0.08);
+  background: rgba(176, 38, 255, 0.08);
   opacity: 0;
   pointer-events: none;
   border-radius: var(--radius-sm);
 }
 
 .card:hover {
-  border-color: rgba(0, 255, 245, 0.25);
-  box-shadow: 0 0 8px rgba(0, 255, 245, 0.1),
-    inset 0 0 8px rgba(0, 255, 245, 0.03);
+  /* border-color and background still transition via CSS; glow is Framer Motion */
   background: rgba(26, 23, 48, 0.95);
 }
 
@@ -55,10 +54,7 @@
   cursor: pointer;
 }
 
-.clickable:active {
-  transform: scale(0.99);
-}
-
+/* transform scale on :active is owned by Framer Motion whileTap */
 .clickable:active::after {
   animation: click-flash 0.3s ease-out;
 }

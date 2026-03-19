@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nickelpack/nsh/main/.config/tauri2/capabilities.schema.json",
   "identifier": "default",
-  "description": "Default capability for NeonDash",
+  "description": "Default capability for Daemon",
   "windows": ["main", "mr-view-*"],
   "permissions": [
     "core:default",
@@ -16,6 +16,8 @@
     "core:window:allow-start-resize-dragging",
     "core:window:allow-hide",
     "core:webview:allow-create-webview-window",
+    "core:window:allow-start-dragging",
+    "core:window:allow-start-resize-dragging",
     "shell:allow-open",
     "notification:default"
   ]

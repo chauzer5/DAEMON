@@ -1,4 +1,4 @@
-# NeonDash
+# Daemon
 
 Synthwave-themed productivity dashboard built with Tauri v2 + React 18 + TypeScript.
 

@@ -6,12 +6,12 @@
 
 .tab {
   flex: 1;
-  padding: 6px 0;
+  padding: 8px 0;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -33,7 +33,7 @@
 
 .tabBadge {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   margin-left: 4px;
   color: var(--neon-magenta);
 }
@@ -58,15 +58,15 @@
 
 .ticketId {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--neon-cyan);
 }
 
 .ticketTitle {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-primary);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1.4;
 }
 
 .ticketMeta {
@@ -74,7 +74,7 @@
   align-items: center;
   gap: var(--gap-sm);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text-muted);
   flex-wrap: wrap;
 }
@@ -96,8 +96,8 @@
 
 .priorityBadge {
   font-family: var(--font-mono);
-  font-size: 9px;
-  padding: 1px 6px;
+  font-size: 10px;
+  padding: 2px 8px;
   border-radius: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -131,8 +131,8 @@
 
 .statusBadge {
   font-family: var(--font-mono);
-  font-size: 9px;
-  padding: 1px 6px;
+  font-size: 10px;
+  padding: 2px 8px;
   border-radius: 8px;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -172,12 +172,216 @@
 
 .label {
   font-family: var(--font-mono);
-  font-size: 9px;
-  padding: 1px 6px;
+  font-size: 10px;
+  padding: 2px 8px;
   border-radius: 8px;
   background: var(--neon-purple-dim);
   color: var(--neon-purple);
   border: 1px solid rgba(176, 38, 255, 0.2);
+}
+
+/* ── Todo Link ── */
+
+.todoLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px;
+  background: rgba(57, 255, 20, 0.08);
+  border: 1px solid rgba(57, 255, 20, 0.2);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--neon-green);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.todoLink:hover {
+  background: rgba(57, 255, 20, 0.15);
+  border-color: rgba(57, 255, 20, 0.4);
+  box-shadow: 0 0 6px rgba(57, 255, 20, 0.2);
+}
+
+/* ── Quick To-Do ── */
+
+.quickTodoBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 1px solid rgba(57, 255, 20, 0.12);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.quickTodoBtn:hover {
+  color: var(--neon-green);
+  border-color: rgba(57, 255, 20, 0.35);
+  background: rgba(57, 255, 20, 0.05);
+}
+
+.suggestionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 6px;
+  animation: fade-in 0.15s ease-out;
+}
+
+.suggestionChip {
+  padding: 3px 10px;
+  background: transparent;
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.suggestion_high {
+  color: var(--neon-red);
+  border: 1px solid rgba(255, 23, 68, 0.25);
+}
+
+.suggestion_high:hover {
+  background: rgba(255, 23, 68, 0.08);
+  border-color: rgba(255, 23, 68, 0.5);
+}
+
+.suggestion_medium {
+  color: var(--neon-yellow);
+  border: 1px solid rgba(255, 230, 0, 0.2);
+}
+
+.suggestion_medium:hover {
+  background: rgba(255, 230, 0, 0.06);
+  border-color: rgba(255, 230, 0, 0.4);
+}
+
+.suggestion_low {
+  color: var(--text-muted);
+  border: 1px solid rgba(168, 156, 200, 0.15);
+}
+
+.suggestion_low:hover {
+  background: rgba(168, 156, 200, 0.06);
+  border-color: rgba(168, 156, 200, 0.3);
+}
+
+/* ── Status Picker ── */
+
+.statusPickerTrigger {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.2s, box-shadow 0.2s;
+}
+
+.statusPickerTrigger:hover {
+  opacity: 0.85;
+  box-shadow: 0 0 8px rgba(0, 255, 245, 0.2);
+}
+
+.statusPickerTrigger:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.statusDropdown {
+  position: fixed;
+  min-width: 180px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg-raised);
+  border: 1px solid rgba(0, 255, 245, 0.15);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(0, 255, 245, 0.08);
+  z-index: 10001;
+  animation: fade-in 0.15s ease-out;
+}
+
+.statusDropdownLoading {
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.statusDropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(176, 38, 255, 0.06);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.statusDropdownItem:last-child {
+  border-bottom: none;
+}
+
+.statusDropdownItem:hover {
+  background: rgba(0, 255, 245, 0.06);
+  color: var(--neon-cyan);
+}
+
+.statusDropdownItemActive {
+  color: var(--neon-cyan);
+  background: rgba(0, 255, 245, 0.04);
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot_backlog {
+  background: rgba(168, 156, 200, 0.4);
+}
+
+.dot_unstarted {
+  background: var(--text-secondary);
+}
+
+.dot_started {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 4px rgba(0, 255, 245, 0.4);
+}
+
+.dot_completed {
+  background: var(--neon-green);
+  box-shadow: 0 0 4px rgba(57, 255, 20, 0.4);
+}
+
+.dot_cancelled,
+.dot_canceled {
+  background: var(--text-muted);
+  opacity: 0.5;
 }
 
 .emptyState {
@@ -186,7 +390,7 @@
   justify-content: center;
   padding: var(--gap-xl);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -216,9 +420,9 @@
   background: transparent;
   border: 1px solid rgba(0, 255, 245, 0.25);
   border-radius: var(--radius-sm);
-  padding: 3px 10px;
+  padding: 4px 12px;
   font-family: var(--font-display);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -235,7 +439,7 @@
 .detailId {
   flex: 1;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--neon-cyan);
 }
 
@@ -272,7 +476,7 @@
 
 .detailTitle {
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text-bright);
   line-height: 1.3;
@@ -292,7 +496,7 @@
 
 .markdown {
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.6;
   color: var(--text-secondary);
 }
@@ -306,9 +510,9 @@
   letter-spacing: 0.5px;
 }
 
-.markdown h1 { font-size: 15px; }
-.markdown h2 { font-size: 13px; }
-.markdown h3 { font-size: 12px; }
+.markdown h1 { font-size: 17px; }
+.markdown h2 { font-size: 15px; }
+.markdown h3 { font-size: 14px; }
 
 .markdown p {
   margin: var(--gap-sm) 0;
@@ -326,9 +530,9 @@
 
 .markdown code {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 13px;
   background: var(--bg-deep);
-  padding: 1px 5px;
+  padding: 2px 6px;
   border-radius: 3px;
   color: var(--neon-cyan);
 }
@@ -345,7 +549,7 @@
 .markdown pre code {
   background: none;
   padding: 0;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-secondary);
 }
 
@@ -374,7 +578,7 @@
   border-collapse: collapse;
   width: 100%;
   margin: var(--gap-sm) 0;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .markdown th,
@@ -397,7 +601,7 @@
 
 .commentsSectionTitle {
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -422,7 +626,7 @@
 
 .commentAuthor {
   font-family: var(--font-display);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--neon-magenta);
   letter-spacing: 0.5px;
@@ -430,13 +634,13 @@
 
 .commentTime {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
 .commentBody {
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 15px;
   line-height: 1.5;
   color: var(--text-secondary);
 }
@@ -447,9 +651,9 @@
 
 .commentBody code {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   background: var(--bg-deep);
-  padding: 1px 4px;
+  padding: 2px 5px;
   border-radius: 3px;
   color: var(--neon-cyan);
 }
@@ -482,7 +686,7 @@
   border-radius: var(--radius-sm);
   padding: var(--gap-sm) var(--gap-md);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-primary);
   outline: none;
   resize: vertical;

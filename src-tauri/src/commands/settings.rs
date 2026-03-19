@@ -5,6 +5,7 @@ use serde::Serialize;
 pub struct AppSettings {
     pub gitlab_pat: Option<String>,
     pub linear_api_key: Option<String>,
+    pub launchdarkly_api_key: Option<String>,
     pub gitlab_group_id: String,
     pub linear_team_id: String,
 }
@@ -24,10 +25,13 @@ pub async fn get_settings() -> Result<AppSettings, String> {
         .map(|k| mask_key(&k));
     let linear_api_key = credentials::get_credential("linear_api_key")?
         .map(|k| mask_key(&k));
+    let launchdarkly_api_key = credentials::get_credential("launchdarkly_api_key")?
+        .map(|k| mask_key(&k));
 
     Ok(AppSettings {
         gitlab_pat,
         linear_api_key,
+        launchdarkly_api_key,
         gitlab_group_id: "12742924".to_string(),
         linear_team_id: "d097c0ee-3414-4d3e-9ff9-56017012a45a".to_string(),
     })
@@ -36,7 +40,7 @@ pub async fn get_settings() -> Result<AppSettings, String> {
 #[tauri::command]
 pub async fn save_setting(key: String, value: String) -> Result<(), String> {
     match key.as_str() {
-        "gitlab_pat" | "linear_api_key" => {
+        "gitlab_pat" | "linear_api_key" | "launchdarkly_api_key" => {
             credentials::store_credential(&key, &value)
         }
         _ => Err(format!("Unknown setting key: {}", key)),
@@ -101,4 +105,29 @@ pub async fn test_linear_connection() -> Result<String, String> {
         resp["data"]["viewer"]["name"].as_str().unwrap_or("Unknown"),
         resp["data"]["viewer"]["email"].as_str().unwrap_or("?")
     ))
+}
+
+#[tauri::command]
+pub async fn test_launchdarkly_connection() -> Result<String, String> {
+    let key = credentials::get_credential("launchdarkly_api_key")?
+        .ok_or("No LaunchDarkly API key configured")?;
+
+    let http = reqwest::Client::new();
+    let resp: serde_json::Value = http
+        .get("https://app.launchdarkly.com/api/v2/projects")
+        .header("Authorization", &key)
+        .send()
+        .await
+        .map_err(|e| format!("Connection failed: {}", e))?
+        .json()
+        .await
+        .map_err(|e| format!("Parse failed: {}", e))?;
+
+    if let Some(message) = resp["message"].as_str() {
+        return Err(message.to_string());
+    }
+
+    let count = resp["items"].as_array().map(|a| a.len()).unwrap_or(0);
+    let first_name = resp["items"][0]["name"].as_str().unwrap_or("Unknown");
+    Ok(format!("{} project{} (e.g. {})", count, if count == 1 { "" } else { "s" }, first_name))
 }

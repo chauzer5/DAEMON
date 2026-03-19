@@ -1,0 +1,245 @@
+/* ── Terminal Drawer — slides up from bottom ── */
+
+.drawer {
+  position: fixed;
+  bottom: var(--statusbar-height);
+  left: 0;
+  right: 0;
+  height: 45vh;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-deep);
+  border-top: 1px solid rgba(0, 255, 245, 0.15);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5),
+    0 -1px 8px rgba(0, 255, 245, 0.08);
+  z-index: 50;
+  /* animation handled by Framer Motion */
+}
+
+/* ── Header ── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-raised);
+  border-bottom: 1px solid rgba(176, 38, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.headerInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.runningDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px rgba(0, 255, 245, 0.6);
+  animation: neon-pulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.commandLabel {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── Task dots — quick switcher ── */
+
+.taskDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s;
+}
+
+.taskDot:hover {
+  background: var(--text-secondary);
+  transform: scale(1.3);
+}
+
+.taskDotActive {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 6px rgba(0, 255, 245, 0.4);
+}
+
+.taskDotRunning {
+  animation: neon-pulse 1s ease-in-out infinite;
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: 1px solid rgba(255, 44, 241, 0.2);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.closeBtn:hover {
+  color: var(--neon-red);
+  border-color: rgba(255, 23, 68, 0.4);
+  background: rgba(255, 23, 68, 0.06);
+}
+
+/* ── Output ── */
+
+.output {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.markdown {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3 {
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  margin: var(--gap-lg) 0 var(--gap-sm);
+  letter-spacing: 0.5px;
+}
+
+.markdown h1 { font-size: 17px; }
+.markdown h2 { font-size: 15px; }
+.markdown h3 { font-size: 14px; }
+
+.markdown p {
+  margin: var(--gap-sm) 0;
+}
+
+.markdown code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--bg-deepest);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--neon-cyan);
+}
+
+.markdown pre {
+  background: var(--bg-deepest);
+  border: 1px solid rgba(176, 38, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding: var(--gap-md);
+  overflow-x: auto;
+  margin: var(--gap-sm) 0;
+}
+
+.markdown pre code {
+  background: none;
+  padding: 0;
+  color: var(--text-secondary);
+}
+
+.markdown ul,
+.markdown ol {
+  padding-left: var(--gap-lg);
+  margin: var(--gap-sm) 0;
+}
+
+.markdown strong {
+  color: var(--text-primary);
+}
+
+.markdown a {
+  color: var(--neon-cyan);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LCARS variant
+   ═══════════════════════════════════════════════════════════════════ */
+
+.drawerLcars {
+  position: fixed;
+  bottom: var(--statusbar-height);
+  left: 0;
+  right: 0;
+  height: 45vh;
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+  background: #000000;
+  border-top: 3px solid #ff9933;
+  z-index: 50;
+  /* animation handled by Framer Motion */
+}
+
+.headerLcars {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: #1e1e30;
+  border-bottom: 2px solid #ff9933;
+  flex-shrink: 0;
+}
+
+.commandLabelLcars {
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  color: #ff9933;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.closeBtnLcars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(204, 51, 51, 0.2);
+  border: none;
+  border-radius: 4px;
+  color: #cc3333;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.closeBtnLcars:hover {
+  background: rgba(204, 51, 51, 0.4);
+}
+
+.markdownLcars {
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}

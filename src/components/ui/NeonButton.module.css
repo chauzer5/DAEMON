@@ -10,7 +10,7 @@
   background: transparent;
   color: var(--neon-cyan);
   cursor: pointer;
-  transition: all 0.2s;
+  /* transition handled by Framer Motion */
   white-space: nowrap;
 }
 
@@ -19,9 +19,7 @@
   box-shadow: var(--glow-cyan);
 }
 
-.button:active {
-  transform: scale(0.97);
-}
+/* :active scale handled by Framer Motion whileTap */
 
 .magenta {
   border-color: var(--neon-magenta);

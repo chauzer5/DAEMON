@@ -1,12 +1,16 @@
 import { useState, useRef } from "react";
-import { ArrowLeft, ExternalLink, GitMerge, MessageSquare, Play, RotateCw } from "lucide-react";
+import { createPortal } from "react-dom";
+import { ArrowLeft, ExternalLink, GitMerge, MessageSquare, Play, RotateCw, ListPlus } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Markdown from "react-markdown";
 import { NeonButton } from "../../components/ui/NeonButton";
 import { RetroLoader } from "../../components/ui/RetroLoader";
 import { ErrorState } from "../../components/ui/ErrorState";
+import { ActionMenu } from "../../components/ai/ActionMenu";
+import { AgentPromptBar } from "../../components/ai/AgentPromptBar";
 import { fetchMRDetail, mergeMR, addMRNote, playJob, retryJob } from "../../services/tauri-bridge";
+import { CreateTodoModal } from "../../components/ui/CreateTodoModal";
 import type { PipelineJob, ApprovalRuleInfo, DiscussionThread } from "../../types/models";
 import styles from "./MRDetailView.module.css";
 
@@ -49,14 +53,29 @@ function PipelineView({ jobs, status, projectId, onRefresh }: { jobs: PipelineJo
   const [tooltip, setTooltip] = useState<{ stage: string; jobs: PipelineJob[]; x: number; y: number } | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hideTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const [pendingJobId, setPendingJobId] = useState<number | null>(null);
 
   const handlePlay = async (jobId: number) => {
-    await playJob(projectId, jobId);
+    setPendingJobId(jobId);
+    try {
+      await playJob(projectId, jobId);
+    } catch {
+      // silently handled — status will show on next refresh
+    }
+    setPendingJobId(null);
+    setTooltip(null);
     onRefresh();
   };
 
   const handleRetry = async (jobId: number) => {
-    await retryJob(projectId, jobId);
+    setPendingJobId(jobId);
+    try {
+      await retryJob(projectId, jobId);
+    } catch {
+      // silently handled — status will show on next refresh
+    }
+    setPendingJobId(null);
+    setTooltip(null);
     onRefresh();
   };
 
@@ -88,26 +107,27 @@ function PipelineView({ jobs, status, projectId, onRefresh }: { jobs: PipelineJo
         Pipeline {status && <span className={jobStatusClass(status)}>{status}</span>}
       </div>
       <div className={styles.pipelineTrack}>
-        {stages.map(([stage, stageJobs], i) => {
+        {stages.map(([stage, stageJobs]) => {
           const ss = stageStatus(stageJobs);
+          const failed = stageJobs.filter((j) => j.status === "failed" && !j.allow_failure);
+          const manual = stageJobs.filter((j) => j.status === "manual");
           return (
-            <div key={stage} className={styles.stageGroup}>
-              {i > 0 && <div className={`${styles.connector} ${jobStatusClass(ss)}`} />}
-              <div
-                className={styles.stageNode}
-                onMouseEnter={(e) => showTooltip(stage, stageJobs, e)}
-                onMouseLeave={scheduleHide}
-              >
-                <div className={`${styles.stageCircle} ${jobStatusClass(ss)}`}>
-                  <span className={styles.stageDot} />
-                </div>
-                <span className={styles.stageName}>{stage.replace(/^\./, "")}</span>
-              </div>
+            <div
+              key={stage}
+              className={styles.stageGroup}
+              onMouseEnter={(e) => showTooltip(stage, stageJobs, e)}
+              onMouseLeave={scheduleHide}
+            >
+              <div className={`${styles.stageCircle} ${jobStatusClass(ss)}`} />
+              <span className={styles.stageName}>{stage.replace(/^\./, "")}</span>
+              <span className={styles.stageJobCount}>{stageJobs.length} {stageJobs.length === 1 ? "job" : "jobs"}</span>
+              {failed.length > 0 && <span className={styles.stageFailedBadge}>{failed.length} failed</span>}
+              {manual.length > 0 && ss === "manual" && <span className={styles.stageManualBadge}>{manual.length} manual</span>}
             </div>
           );
         })}
       </div>
-      {tooltip && (
+      {tooltip && createPortal(
         <div
           ref={tooltipRef}
           className={styles.stageTooltip}
@@ -122,18 +142,29 @@ function PipelineView({ jobs, status, projectId, onRefresh }: { jobs: PipelineJo
               <span className={styles.tooltipJobName}>{job.name}</span>
               <span className={styles.tooltipStatus}>{job.status}</span>
               {job.status === "manual" && (
-                <button className={styles.jobAction} onClick={() => handlePlay(job.id)} title="Play">
+                <button
+                  className={`${styles.jobAction} ${pendingJobId === job.id ? styles.jobActionPending : ""}`}
+                  onClick={() => handlePlay(job.id)}
+                  disabled={pendingJobId !== null}
+                  title="Play"
+                >
                   <Play size={10} />
                 </button>
               )}
               {job.status === "failed" && (
-                <button className={styles.jobAction} onClick={() => handleRetry(job.id)} title="Retry">
+                <button
+                  className={`${styles.jobAction} ${pendingJobId === job.id ? styles.jobActionPending : ""}`}
+                  onClick={() => handleRetry(job.id)}
+                  disabled={pendingJobId !== null}
+                  title="Retry"
+                >
                   <RotateCw size={10} />
                 </button>
               )}
             </div>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
@@ -203,6 +234,7 @@ export function MRDetailView({
   const [mergeError, setMergeError] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
   const [posting, setPosting] = useState(false);
+  const [showCreateTodo, setShowCreateTodo] = useState(false);
 
   const handleMerge = async () => {
     if (!mr) return;
@@ -240,11 +272,51 @@ export function MRDetailView({
         </button>
         <span className={styles.mrId}>!{mrIid}</span>
         {mr && (
-          <button className={styles.externalBtn} onClick={() => open(mr.web_url)} title="Open in browser">
-            <ExternalLink size={12} />
-          </button>
+          <>
+            <button
+              className={styles.externalBtn}
+              onClick={() => setShowCreateTodo(true)}
+              title="Create To-Do"
+            >
+              <ListPlus size={12} />
+            </button>
+            <button className={styles.externalBtn} onClick={() => open(mr.web_url)} title="Open in browser">
+              <ExternalLink size={12} />
+            </button>
+            <ActionMenu
+              source="gitlab"
+              context={{
+                iid: mrIid,
+                title: mr.title,
+                webUrl: mr.web_url,
+                description: mr.description,
+                sourceBranch: mr.source_branch,
+                targetBranch: mr.target_branch,
+                hasConflicts: mr.has_conflicts,
+                pipelineStatus: mr.pipeline_status,
+                author: mr.author,
+              }}
+            />
+          </>
         )}
       </div>
+      {mr && (
+        <AgentPromptBar
+          contextLabel={`MR !${mrIid}`}
+          contextPrefix={`Regarding GitLab MR !${mrIid}: "${mr.title}"\nAuthor: ${mr.author}\nBranches: ${mr.source_branch} → ${mr.target_branch}\nPipeline: ${mr.pipeline_status ?? "unknown"}\nConflicts: ${mr.has_conflicts ? "yes" : "no"}`}
+        />
+      )}
+      {showCreateTodo && mr && (
+        <CreateTodoModal
+          preset={{
+            source: "gitlab",
+            title: mr.title,
+            subtitle: `!${mrIid} by ${mr.author}`,
+            url: mr.web_url,
+          }}
+          onClose={() => setShowCreateTodo(false)}
+        />
+      )}
 
       {isLoading && <RetroLoader type="gitlab" />}
       {isError && <ErrorState message={String(error)} onRetry={() => refetch()} />}

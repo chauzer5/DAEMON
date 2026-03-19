@@ -1,20 +1,22 @@
+<<<<<<< HEAD
 import { useState, useEffect, useCallback, useMemo } from "react";
+=======
+import { useState, useEffect } from "react";
+>>>>>>> fb88e2446a8d1d38d8da40bf2a2a73db0e4fb13c
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AnimatePresence } from "framer-motion";
 import { listen } from "@tauri-apps/api/event";
 import "./theme/globals.css";
 import { ThemeProvider } from "./themes";
-import { TitleBar, type PanelId } from "./components/layout/TitleBar";
+import { TitleBar } from "./components/layout/TitleBar";
 import { StatusBar } from "./components/layout/StatusBar";
-import { DashboardGrid } from "./components/layout/DashboardGrid";
+import { AppShell } from "./components/layout/AppShell";
+import { LavaBackground } from "./components/layout/LavaBackground";
 import { ScanlineOverlay } from "./components/layout/ScanlineOverlay";
 import { HudDecorations } from "./components/ui/HudDecorations";
 import { BootSequence } from "./components/ui/BootSequence";
 import { SettingsModal } from "./components/ui/SettingsModal";
-import { EmptySlot } from "./components/layout/EmptySlot";
-import { SlackPanel } from "./panels/slack/SlackPanel";
-import { GitLabPanel } from "./panels/gitlab/GitLabPanel";
-import { AgentsPanel } from "./panels/agents/AgentsPanel";
-import { LinearPanel } from "./panels/linear/LinearPanel";
+import { TerminalDrawer } from "./components/ai/TerminalDrawer";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,33 +28,9 @@ const queryClient = new QueryClient({
   },
 });
 
-const PANEL_ORDER: PanelId[] = ["slack", "gitlab", "agents", "linear"];
-
-const PANEL_COMPONENTS: Record<PanelId, React.ComponentType> = {
-  slack: SlackPanel,
-  gitlab: GitLabPanel,
-  agents: AgentsPanel,
-  linear: LinearPanel,
-};
-
 function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [bootKey, setBootKey] = useState(0);
-  const [openPanels, setOpenPanels] = useState<Set<PanelId>>(
-    new Set(PANEL_ORDER),
-  );
-
-  const togglePanel = useCallback((id: PanelId) => {
-    setOpenPanels((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
 
   useEffect(() => {
     const unlistenSettings = listen("open-settings", () => {
@@ -70,6 +48,7 @@ function App() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
+        <LavaBackground />
         <div
           style={{
             display: "flex",
@@ -79,6 +58,7 @@ function App() {
             zIndex: 1,
           }}
         >
+<<<<<<< HEAD
           <TitleBar openPanels={openPanels} onTogglePanel={togglePanel} onResync={() => queryClient.invalidateQueries()} />
           <DashboardGrid>
             {PANEL_ORDER.map((id) => {
@@ -89,13 +69,20 @@ function App() {
               return <EmptySlot key={id} />;
             })}
           </DashboardGrid>
+=======
+          <TitleBar />
+          <AppShell />
+>>>>>>> fb88e2446a8d1d38d8da40bf2a2a73db0e4fb13c
           <StatusBar onOpenSettings={() => setShowSettings(true)} />
+          <TerminalDrawer />
           <ScanlineOverlay />
           <HudDecorations />
           <BootSequence key={bootKey} forcePlay={bootKey > 0} />
-          {showSettings && (
-            <SettingsModal onClose={() => setShowSettings(false)} />
-          )}
+          <AnimatePresence>
+            {showSettings && (
+              <SettingsModal onClose={() => setShowSettings(false)} />
+            )}
+          </AnimatePresence>
         </div>
       </QueryClientProvider>
     </ThemeProvider>
