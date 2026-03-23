@@ -1,0 +1,138 @@
+/* ── MCP Health Toast Container — fixed bottom-left stack ── */
+
+.toastContainer {
+  position: fixed;
+  bottom: calc(var(--statusbar-height, 36px) + 12px);
+  left: var(--gap-lg);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  z-index: 300;
+  pointer-events: none;
+  max-height: calc(100vh - 120px);
+  overflow: hidden;
+}
+
+/* ── Individual Toast ── */
+
+.toast {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  width: 340px;
+  background: rgba(10, 10, 30, 0.95);
+  border: 1px solid var(--neon-yellow, #ffe600);
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.6),
+    0 0 24px rgba(255, 230, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  pointer-events: auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.toast::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--neon-yellow, #ffe600);
+  opacity: 0.8;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon {
+  color: var(--neon-yellow, #ffe600);
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--neon-yellow, #ffe600);
+  flex: 1;
+}
+
+.serverName {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.errorMsg {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--neon-cyan);
+  font-style: italic;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.actionBtn {
+  flex: 1;
+  padding: 4px 8px;
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.12s;
+  border: 1px solid;
+}
+
+.reconnectBtn {
+  background: rgba(0, 255, 245, 0.08);
+  color: var(--neon-cyan);
+  border-color: rgba(0, 255, 245, 0.25);
+}
+
+.reconnectBtn:hover {
+  background: rgba(0, 255, 245, 0.15);
+}
+
+.fallbackBtn {
+  background: rgba(255, 230, 0, 0.06);
+  color: var(--neon-yellow, #ffe600);
+  border-color: rgba(255, 230, 0, 0.2);
+}
+
+.fallbackBtn:hover {
+  background: rgba(255, 230, 0, 0.12);
+}
+
+.dismissBtn {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.dismissBtn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}

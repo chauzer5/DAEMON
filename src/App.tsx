@@ -14,6 +14,7 @@ import { BootSequence } from "./components/ui/BootSequence";
 import { SettingsModal } from "./components/ui/SettingsModal";
 import { TerminalDrawer } from "./components/ai/TerminalDrawer";
 import { AgentToastContainer } from "./components/ui/AgentToastContainer";
+import { McpHealthToastContainer } from "./components/ui/McpHealthToastContainer";
 import { useCorrelationEngine, useMonitorDetectors, useGmailAlerts } from "./hooks";
 
 const queryClient = new QueryClient({
@@ -72,6 +73,7 @@ function DaemonShell() {
         <ScanlineOverlay />
         <HudDecorations />
         <AgentToastContainer />
+        <McpHealthToastContainer />
         <BootSequence key={bootKey} forcePlay={bootKey > 0} />
         <AnimatePresence>
           {showSettings && (

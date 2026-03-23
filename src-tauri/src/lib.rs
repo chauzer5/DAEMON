@@ -104,6 +104,7 @@ pub fn run() {
             agent::kill_agent_command,
             agent::run_interactive_agent,
             agent::respond_to_agent,
+            agent::recover_mcp_agent,
             settings::get_settings,
             settings::save_setting,
             settings::test_gitlab_connection,

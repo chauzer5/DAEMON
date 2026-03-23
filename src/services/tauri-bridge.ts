@@ -114,6 +114,16 @@ export function gmailAlertToSlack(): Promise<number> {
   return invoke<number>("gmail_alert_to_slack");
 }
 
+// ── MCP Recovery ──
+
+export function recoverMcpAgent(
+  taskId: string,
+  serverName: string,
+  strategy: "resume" | "fallback",
+): Promise<string> {
+  return invoke<string>("recover_mcp_agent", { taskId, serverName, strategy });
+}
+
 // ── LaunchDarkly ──
 
 export function fetchCommsFlags(): Promise<import("../types/models").LDFlag[]> {

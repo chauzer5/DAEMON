@@ -74,6 +74,18 @@ static PTY_WRITER_REGISTRY: Lazy<Mutex<HashMap<String, Box<dyn std::io::Write + 
 static SESSION_REGISTRY: Lazy<Mutex<HashMap<String, String>>> =
     Lazy::new(|| Mutex::new(HashMap::new()));
 
+// MCP config registry — maps task_id to the MCP config JSON used at spawn
+static MCP_CONFIG_REGISTRY: Lazy<Mutex<HashMap<String, String>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
+
+// MCP failure counter — maps "task_id:server_name" to consecutive failure count
+static MCP_FAILURE_COUNTS: Lazy<Mutex<HashMap<String, u32>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
+
+// Recovery attempt counter — maps task_id to number of recovery attempts
+static RECOVERY_COUNTS: Lazy<Mutex<HashMap<String, u32>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
+
 struct PtyHandle {
     master: Box<dyn portable_pty::MasterPty + Send>,
     child: Box<dyn portable_pty::Child + Send>,
@@ -95,6 +107,88 @@ struct AgentQuestion {
 #[derive(Clone, serde::Serialize)]
 struct AgentTurnComplete {
     task_id: String,
+}
+
+#[derive(Clone, serde::Serialize)]
+struct McpFailureEvent {
+    task_id: String,
+    server_name: String,
+    error_message: String,
+    failure_count: u32,
+    is_critical: bool,
+}
+
+/// Inject all relevant API keys as env vars so agents can fall back to curl
+fn inject_all_api_keys(cmd: &mut tokio::process::Command) {
+    if let Ok(Some(v)) = crate::services::credentials::get_credential("dd_api_key") {
+        cmd.env("DD_API_KEY", &v);
+    }
+    if let Ok(Some(v)) = crate::services::credentials::get_credential("dd_app_key") {
+        cmd.env("DD_APP_KEY", &v);
+    }
+    if let Ok(Some(v)) = crate::services::credentials::get_credential("linear_api_key") {
+        cmd.env("LINEAR_API_KEY", &v);
+    }
+    if let Ok(Some(v)) = crate::services::credentials::get_credential("gitlab_pat") {
+        cmd.env("GITLAB_PAT", &v);
+    }
+    if let Ok(Some(v)) = crate::services::credentials::get_credential("launchdarkly_api_key") {
+        cmd.env("LAUNCHDARKLY_API_KEY", &v);
+    }
+}
+
+/// Extract MCP server name from a tool name like "mcp__datadog-mcp__search_monitors"
+fn mcp_server_from_tool(tool_name: &str) -> Option<String> {
+    tool_name.strip_prefix("mcp__").and_then(|rest| {
+        rest.split("__").next().map(|s| s.to_string())
+    })
+}
+
+/// Check if an error message looks like an MCP connection failure
+fn is_mcp_connection_error(msg: &str) -> bool {
+    let patterns = [
+        "connection refused", "server disconnected", "transport error",
+        "ECONNRESET", "ECONNREFUSED", "EPIPE", "timeout", "502", "503",
+        "not available", "not connected", "unavailable", "MCP server",
+        "failed to connect", "connection closed", "broken pipe",
+    ];
+    let lower = msg.to_lowercase();
+    patterns.iter().any(|p| lower.contains(&p.to_lowercase()))
+}
+
+/// Record an MCP tool failure, return (failure_count, is_critical)
+fn record_mcp_failure(task_id: &str, server_name: &str) -> (u32, bool) {
+    let key = format!("{}:{}", task_id, server_name);
+    let mut counts = MCP_FAILURE_COUNTS.lock().unwrap();
+    let count = counts.entry(key).or_insert(0);
+    *count += 1;
+    let c = *count;
+    (c, c >= 3)
+}
+
+/// Reset MCP failure count for a server (e.g., when a tool succeeds)
+fn reset_mcp_failure(task_id: &str, server_name: &str) {
+    let key = format!("{}:{}", task_id, server_name);
+    let mut counts = MCP_FAILURE_COUNTS.lock().unwrap();
+    counts.remove(&key);
+}
+
+/// Build the fallback instructions message for an agent whose MCP server is down
+fn mcp_fallback_instructions(server_name: &str) -> String {
+    let api_hint = match server_name {
+        "datadog-mcp" => "Use env vars DD_API_KEY and DD_APP_KEY with curl against https://api.datadoghq.com/api/v1 and /api/v2",
+        "linear-server" => "Use env var LINEAR_API_KEY as Authorization header with curl against https://api.linear.app/graphql",
+        "launchdarkly" => "Use env var LAUNCHDARKLY_API_KEY as Authorization header with curl against https://app.launchdarkly.com/api/v2",
+        "figma" => "Figma MCP is OAuth-based; fallback to direct API is not available",
+        "playwright" => "Playwright MCP failed; browser automation is not available via fallback",
+        _ => "Check environment variables for available API keys",
+    };
+    format!(
+        "IMPORTANT: The {} MCP server has disconnected and tools prefixed with mcp__{}__ are unavailable. \
+         Fall back to direct API calls via curl using the Bash tool. {}. \
+         Do NOT attempt to use mcp__{}__ tools — they will fail.",
+        server_name, server_name, api_hint, server_name
+    )
 }
 
 #[derive(Clone, Default, serde::Deserialize)]
@@ -139,13 +233,14 @@ pub async fn run_agent_command(
     cmd.arg("--mcp-config").arg(&mcp_config);
     cmd.arg("--strict-mcp-config");
 
-    // Inject API keys for agents that use curl against external APIs
-    if let Ok(Some(dd_api)) = crate::services::credentials::get_credential("dd_api_key") {
-        cmd.env("DD_API_KEY", &dd_api);
+    // Store MCP config for resume/recovery
+    {
+        let mut mcp_reg = MCP_CONFIG_REGISTRY.lock().unwrap();
+        mcp_reg.insert(task_id.clone(), mcp_config.clone());
     }
-    if let Ok(Some(dd_app)) = crate::services::credentials::get_credential("dd_app_key") {
-        cmd.env("DD_APP_KEY", &dd_app);
-    }
+
+    // Inject all API keys so agents can fall back to curl if MCP servers disconnect
+    inject_all_api_keys(&mut cmd);
 
     // Model: options.model takes precedence over top-level model param
     let effective_model = opts.model.as_deref().or(model.as_deref());
@@ -445,8 +540,18 @@ pub async fn respond_to_agent(
     cmd.arg("--include-partial-messages");
 
     cmd.arg("--settings").arg(r#"{"otelHeadersHelper":""}"#);
-    cmd.arg("--mcp-config").arg(r#"{"mcpServers":{}}"#);
+
+    // Restore the MCP config from the original spawn (fixes bug where resume lost all MCP)
+    let mcp_config = {
+        let mcp_reg = MCP_CONFIG_REGISTRY.lock().unwrap();
+        mcp_reg.get(&task_id).cloned()
+            .unwrap_or_else(|| r#"{"mcpServers":{}}"#.to_string())
+    };
+    cmd.arg("--mcp-config").arg(&mcp_config);
     cmd.arg("--strict-mcp-config");
+
+    // Inject all API keys for curl fallback
+    inject_all_api_keys(&mut cmd);
 
     cmd.arg("--resume").arg(&session_id);
     cmd.arg("--dangerously-skip-permissions");
@@ -471,10 +576,11 @@ pub async fn respond_to_agent(
     let app_clone = app.clone();
     let tid = task_id.clone();
 
-    // Stream stdout
+    // Stream stdout (with MCP health detection)
     let stdout_handle = tokio::spawn(async move {
         let reader = BufReader::new(stdout);
         let mut lines = reader.lines();
+        let mut last_mcp_tool_server: Option<String> = None;
 
         while let Ok(Some(line)) = lines.next_line().await {
             if line.trim().is_empty() {
@@ -499,6 +605,34 @@ pub async fn respond_to_agent(
                                 );
                             }
                         }
+                    }
+                    "tool_use" => {
+                        if let Some(name) = json["tool_name"].as_str()
+                            .or_else(|| json["name"].as_str())
+                        {
+                            last_mcp_tool_server = mcp_server_from_tool(name);
+                        }
+                    }
+                    "tool_result" => {
+                        let is_error = json["is_error"].as_bool().unwrap_or(false);
+                        let content = json["content"].as_str()
+                            .or_else(|| json["error"].as_str())
+                            .unwrap_or("");
+                        if let Some(ref server) = last_mcp_tool_server {
+                            if is_error && is_mcp_connection_error(content) {
+                                let (count, critical) = record_mcp_failure(&tid, server);
+                                let _ = app_clone.emit("mcp-failure", McpFailureEvent {
+                                    task_id: tid.clone(),
+                                    server_name: server.clone(),
+                                    error_message: content.chars().take(200).collect(),
+                                    failure_count: count,
+                                    is_critical: critical,
+                                });
+                            } else if !is_error {
+                                reset_mcp_failure(&tid, server);
+                            }
+                        }
+                        last_mcp_tool_server = None;
                     }
                     "result" => {
                         // Update session_id in case it changed
@@ -756,13 +890,14 @@ pub async fn run_interactive_agent(
     cmd.arg("--mcp-config").arg(&mcp_config);
     cmd.arg("--strict-mcp-config");
 
-    // Inject API keys for agents that use curl against external APIs
-    if let Ok(Some(dd_api)) = crate::services::credentials::get_credential("dd_api_key") {
-        cmd.env("DD_API_KEY", &dd_api);
+    // Store MCP config for resume/recovery
+    {
+        let mut mcp_reg = MCP_CONFIG_REGISTRY.lock().unwrap();
+        mcp_reg.insert(task_id.clone(), mcp_config.clone());
     }
-    if let Ok(Some(dd_app)) = crate::services::credentials::get_credential("dd_app_key") {
-        cmd.env("DD_APP_KEY", &dd_app);
-    }
+
+    // Inject all API keys so agents can fall back to curl if MCP servers disconnect
+    inject_all_api_keys(&mut cmd);
 
     // Model
     let effective_model = opts.model.as_deref();
@@ -827,10 +962,12 @@ pub async fn run_interactive_agent(
     let app_clone = app.clone();
     let tid = task_id.clone();
 
-    // Stream stdout — parse stream-json events for text deltas
+    // Stream stdout — parse stream-json events for text deltas + MCP health
     let stdout_handle = tokio::spawn(async move {
         let reader = BufReader::new(stdout);
         let mut lines = reader.lines();
+        // Track the last MCP tool use for correlating with tool_result errors
+        let mut last_mcp_tool_server: Option<String> = None;
 
         while let Ok(Some(line)) = lines.next_line().await {
             if line.trim().is_empty() {
@@ -855,6 +992,37 @@ pub async fn run_interactive_agent(
                                 );
                             }
                         }
+                    }
+                    // Layer 2: MCP health detection — track tool_use/tool_result pairs
+                    "tool_use" => {
+                        if let Some(name) = json["tool_name"].as_str()
+                            .or_else(|| json["name"].as_str())
+                        {
+                            last_mcp_tool_server = mcp_server_from_tool(name);
+                        }
+                    }
+                    "tool_result" => {
+                        let is_error = json["is_error"].as_bool().unwrap_or(false);
+                        let content = json["content"].as_str()
+                            .or_else(|| json["error"].as_str())
+                            .unwrap_or("");
+
+                        if let Some(ref server) = last_mcp_tool_server {
+                            if is_error && is_mcp_connection_error(content) {
+                                let (count, critical) = record_mcp_failure(&tid, server);
+                                let _ = app_clone.emit("mcp-failure", McpFailureEvent {
+                                    task_id: tid.clone(),
+                                    server_name: server.clone(),
+                                    error_message: content.chars().take(200).collect(),
+                                    failure_count: count,
+                                    is_critical: critical,
+                                });
+                            } else if !is_error {
+                                // Tool succeeded — reset failure count
+                                reset_mcp_failure(&tid, server);
+                            }
+                        }
+                        last_mcp_tool_server = None;
                     }
                     "assistant" => {
                         // Full message — already streamed via deltas
@@ -936,5 +1104,170 @@ pub async fn run_interactive_agent(
     );
 
     Ok(())
+}
+
+// ── Layer 3: MCP Recovery ──────────────────────────────────────────
+
+/// Recover an agent's MCP server connection.
+///
+/// Priority hierarchy:
+/// 1. "resume"   — Kill agent, restart with --resume and fresh MCP connections
+/// 2. "fallback" — Resume with curl instructions (no MCP servers)
+///
+/// Auto-escalates to fallback after 2 failed resume attempts.
+#[tauri::command]
+pub async fn recover_mcp_agent(
+    app: tauri::AppHandle,
+    task_id: String,
+    server_name: String,
+    strategy: String,
+) -> Result<String, String> {
+    let attempt = {
+        let mut counts = RECOVERY_COUNTS.lock().unwrap();
+        let count = counts.entry(task_id.clone()).or_insert(0);
+        *count += 1;
+        *count
+    };
+
+    let effective = if strategy == "resume" && attempt > 2 { "fallback" } else { &strategy };
+
+    let session_id = SESSION_REGISTRY.lock().unwrap().get(&task_id).cloned()
+        .ok_or("No session_id — cannot recover")?;
+
+    match effective {
+        "resume" => {
+            let _ = kill_agent_command(task_id.clone()).await;
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+
+            let mcp_config = MCP_CONFIG_REGISTRY.lock().unwrap().get(&task_id).cloned()
+                .unwrap_or_else(|| r#"{"mcpServers":{}}"#.to_string());
+
+            let mut cmd = tokio::process::Command::new("/Users/ajholloway/.local/bin/claude");
+            cmd.current_dir("/Users/ajholloway/Programming");
+            cmd.env("CLAUDE_CODE_ENABLE_TELEMETRY", "0");
+            cmd.env("OTEL_METRICS_EXPORTER", "");
+            cmd.env("OTEL_LOGS_EXPORTER", "");
+            cmd.env("OTEL_EXPORTER_OTLP_ENDPOINT", "");
+            inject_all_api_keys(&mut cmd);
+            cmd.arg("--print").arg("--output-format").arg("stream-json");
+            cmd.arg("--verbose").arg("--include-partial-messages");
+            cmd.arg("--settings").arg(r#"{"otelHeadersHelper":""}"#);
+            cmd.arg("--mcp-config").arg(&mcp_config);
+            cmd.arg("--strict-mcp-config");
+            cmd.arg("--resume").arg(&session_id);
+            cmd.arg("--dangerously-skip-permissions");
+            cmd.arg(format!(
+                "The {} MCP server disconnected. A fresh connection has been established. \
+                 Retry the failed operation. If tools still fail, fall back to curl with env vars.",
+                server_name
+            ));
+            cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+            let mut child = cmd.spawn().map_err(|e| format!("Resume failed: {}", e))?;
+            let stdout = child.stdout.take().ok_or("No stdout")?;
+            let stderr = child.stderr.take().ok_or("No stderr")?;
+            AGENT_REGISTRY.lock().unwrap().insert(task_id.clone(), child);
+            reset_mcp_failure(&task_id, &server_name);
+
+            let app_c = app.clone();
+            let tid = task_id.clone();
+            let sh = tokio::spawn(async move {
+                let r = BufReader::new(stdout);
+                let mut lines = r.lines();
+                let mut last_mcp: Option<String> = None;
+                while let Ok(Some(line)) = lines.next_line().await {
+                    if line.trim().is_empty() { continue; }
+                    if let Ok(j) = serde_json::from_str::<serde_json::Value>(&line) {
+                        match j["type"].as_str().unwrap_or("") {
+                            "stream_event" if j["event"]["type"].as_str() == Some("content_block_delta") => {
+                                if let Some(t) = j["event"]["delta"]["text"].as_str() {
+                                    let _ = app_c.emit("agent-output", AgentOutput { task_id: tid.clone(), line: t.into(), done: false });
+                                }
+                            }
+                            "tool_use" => { last_mcp = j["tool_name"].as_str().or(j["name"].as_str()).and_then(|n| mcp_server_from_tool(n)); }
+                            "tool_result" => {
+                                if let Some(ref s) = last_mcp {
+                                    let ie = j["is_error"].as_bool().unwrap_or(false);
+                                    let ct = j["content"].as_str().or(j["error"].as_str()).unwrap_or("");
+                                    if ie && is_mcp_connection_error(ct) {
+                                        let (c, cr) = record_mcp_failure(&tid, s);
+                                        let _ = app_c.emit("mcp-failure", McpFailureEvent { task_id: tid.clone(), server_name: s.clone(), error_message: ct.chars().take(200).collect(), failure_count: c, is_critical: cr });
+                                    } else if !ie { reset_mcp_failure(&tid, s); }
+                                }
+                                last_mcp = None;
+                            }
+                            "result" => { if let Some(sid) = j["session_id"].as_str() { SESSION_REGISTRY.lock().unwrap().insert(tid.clone(), sid.into()); } }
+                            _ => {}
+                        }
+                    }
+                }
+            });
+            let app_c2 = app.clone(); let tid2 = task_id.clone();
+            let eh = tokio::spawn(async move {
+                let r = BufReader::new(stderr); let mut lines = r.lines();
+                while let Ok(Some(l)) = lines.next_line().await {
+                    let _ = app_c2.emit("agent-output", AgentOutput { task_id: tid2.clone(), line: format!("[stderr] {}", l), done: false });
+                }
+            });
+            let _ = sh.await; let _ = eh.await;
+            let maybe_child = { AGENT_REGISTRY.lock().unwrap().remove(&task_id) };
+            if let Some(mut c) = maybe_child { let _ = c.wait().await; }
+            let _ = app.emit("agent-output", AgentOutput { task_id: task_id.clone(), line: String::new(), done: true });
+            Ok("resumed".into())
+        }
+
+        "fallback" | _ => {
+            let instructions = mcp_fallback_instructions(&server_name);
+            let mut cmd = tokio::process::Command::new("/Users/ajholloway/.local/bin/claude");
+            cmd.current_dir("/Users/ajholloway/Programming");
+            cmd.env("CLAUDE_CODE_ENABLE_TELEMETRY", "0");
+            cmd.env("OTEL_METRICS_EXPORTER", "");
+            cmd.env("OTEL_LOGS_EXPORTER", "");
+            cmd.env("OTEL_EXPORTER_OTLP_ENDPOINT", "");
+            inject_all_api_keys(&mut cmd);
+            cmd.arg("--print").arg("--output-format").arg("stream-json");
+            cmd.arg("--verbose").arg("--include-partial-messages");
+            cmd.arg("--settings").arg(r#"{"otelHeadersHelper":""}"#);
+            cmd.arg("--mcp-config").arg(r#"{"mcpServers":{}}"#);
+            cmd.arg("--strict-mcp-config");
+            cmd.arg("--resume").arg(&session_id);
+            cmd.arg("--dangerously-skip-permissions");
+            cmd.arg(&instructions);
+            cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+            let mut child = cmd.spawn().map_err(|e| format!("Fallback failed: {}", e))?;
+            let stdout = child.stdout.take().ok_or("No stdout")?;
+            let stderr = child.stderr.take().ok_or("No stderr")?;
+            AGENT_REGISTRY.lock().unwrap().insert(task_id.clone(), child);
+
+            let app_c = app.clone(); let tid = task_id.clone();
+            let sh = tokio::spawn(async move {
+                let r = BufReader::new(stdout); let mut lines = r.lines();
+                while let Ok(Some(line)) = lines.next_line().await {
+                    if line.trim().is_empty() { continue; }
+                    if let Ok(j) = serde_json::from_str::<serde_json::Value>(&line) {
+                        if j["type"].as_str() == Some("stream_event") && j["event"]["type"].as_str() == Some("content_block_delta") {
+                            if let Some(t) = j["event"]["delta"]["text"].as_str() {
+                                let _ = app_c.emit("agent-output", AgentOutput { task_id: tid.clone(), line: t.into(), done: false });
+                            }
+                        }
+                        if j["type"].as_str() == Some("result") { if let Some(sid) = j["session_id"].as_str() { SESSION_REGISTRY.lock().unwrap().insert(tid.clone(), sid.into()); } }
+                    }
+                }
+            });
+            let app_c2 = app.clone(); let tid2 = task_id.clone();
+            let eh = tokio::spawn(async move {
+                let r = BufReader::new(stderr); let mut lines = r.lines();
+                while let Ok(Some(l)) = lines.next_line().await {
+                    let _ = app_c2.emit("agent-output", AgentOutput { task_id: tid2.clone(), line: format!("[stderr] {}", l), done: false });
+                }
+            });
+            let _ = sh.await; let _ = eh.await;
+            let maybe_child = { AGENT_REGISTRY.lock().unwrap().remove(&task_id) };
+            if let Some(mut c) = maybe_child { let _ = c.wait().await; }
+            let _ = app.emit("agent-output", AgentOutput { task_id: task_id.clone(), line: String::new(), done: true });
+            Ok("fallback".into())
+        }
+    }
 }
 
