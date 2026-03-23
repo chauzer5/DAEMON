@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Archive,
@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronRight,
   ExternalLink,
+  Activity,
 } from "lucide-react";
 import { Panel } from "../../components/layout/Panel";
 import { useFocusStore } from "../../stores/focusStore";
@@ -27,6 +28,7 @@ const SOURCE_ICONS: Record<FocusSource, typeof MessageSquare> = {
   slack: MessageSquare,
   gitlab: GitMerge,
   linear: LayoutList,
+  datadog: Activity,
   todos: CheckSquare,
 };
 
