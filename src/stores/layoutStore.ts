@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type PanelId = "hub" | "slack" | "gitlab" | "agents" | "linear" | "todos" | "archive" | "browser" | "datadog";
+export type PanelId = "hub" | "slack" | "gitlab" | "agents" | "linear" | "todos" | "archive" | "browser" | "datadog" | "launchdarkly";
 
 export interface PendingThread {
   channelId: string;

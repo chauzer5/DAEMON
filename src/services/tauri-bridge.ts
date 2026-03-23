@@ -95,6 +95,31 @@ export function fetchDatadogMonitors(): Promise<import("../types/models").Datado
   return invoke<import("../types/models").DatadogMonitor[]>("get_datadog_monitors");
 }
 
+// ── Gmail ──
+
+export interface GmailAlert {
+  id: string;
+  subject: string;
+  from: string;
+  date: string;
+  snippet: string;
+  rule: string;
+}
+
+export function checkGmailAlerts(): Promise<GmailAlert[]> {
+  return invoke<GmailAlert[]>("check_gmail_alerts");
+}
+
+export function gmailAlertToSlack(): Promise<number> {
+  return invoke<number>("gmail_alert_to_slack");
+}
+
+// ── LaunchDarkly ──
+
+export function fetchCommsFlags(): Promise<import("../types/models").LDFlag[]> {
+  return invoke<import("../types/models").LDFlag[]>("get_comms_flags");
+}
+
 // ── PTY agent functions ──
 
 export function spawnAgentPty(ptyId: string, command: string, args: string): Promise<void> {

@@ -14,7 +14,7 @@ import { BootSequence } from "./components/ui/BootSequence";
 import { SettingsModal } from "./components/ui/SettingsModal";
 import { TerminalDrawer } from "./components/ai/TerminalDrawer";
 import { AgentToastContainer } from "./components/ui/AgentToastContainer";
-import { useCorrelationEngine, useMonitorDetectors } from "./hooks";
+import { useCorrelationEngine, useMonitorDetectors, useGmailAlerts } from "./hooks";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +36,9 @@ function DaemonShell() {
 
   // Cross-panel intelligence — builds correlation index from all data sources
   useCorrelationEngine();
+
+  // Gmail polling — DMs actionable emails to Slack every 5 minutes
+  useGmailAlerts();
 
   useEffect(() => {
     const unlistenSettings = listen("open-settings", () => {

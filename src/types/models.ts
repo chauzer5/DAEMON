@@ -195,6 +195,19 @@ export interface DatadogMonitor {
   modified: string | null;
 }
 
+// ── LaunchDarkly ──
+
+export interface LDFlag {
+  key: string;
+  name: string;
+  description: string;
+  tags: string[];
+  prod_on: boolean;
+  test_on: boolean;
+  archived: boolean;
+  last_modified: number | null;
+}
+
 // ── Agents ──
 
 export type AgentTaskStatus = "Queued" | "Running" | "Completed" | "Failed";

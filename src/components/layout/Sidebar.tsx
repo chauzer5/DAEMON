@@ -8,6 +8,7 @@ import {
   Archive,
   Globe,
   Activity,
+  Flag,
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { SidebarNavItem } from "./SidebarNavItem";
@@ -30,6 +31,7 @@ const NAV_ITEMS: {
   { id: "gitlab", label: "GitLab", icon: GitMerge },
   { id: "agents", label: "Agents", icon: Bot },
   { id: "datadog", label: "Monitors", icon: Activity },
+  { id: "launchdarkly", label: "Flags", icon: Flag },
   { id: "browser", label: "Browse", icon: Globe },
   { id: "archive", label: "Archive", icon: Archive },
 ];

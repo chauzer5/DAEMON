@@ -1,0 +1,256 @@
+/* ── Summary Bar ── */
+
+.summaryBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.summaryChip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.chipOn {
+  background: rgba(57, 255, 20, 0.08);
+  color: var(--neon-green, #39ff14);
+  border: 1px solid rgba(57, 255, 20, 0.15);
+}
+
+.chipOff {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.chipMismatch {
+  background: rgba(255, 230, 0, 0.1);
+  color: var(--neon-yellow, #ffe600);
+  border: 1px solid rgba(255, 230, 0, 0.2);
+}
+
+/* ── Flag List ── */
+
+.flagList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── Flag Card ── */
+
+.flagCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background 0.12s;
+}
+
+.flagCard:hover {
+  background: rgba(176, 38, 255, 0.04);
+}
+
+.flagContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.flagName {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.flagKey {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ── Toggle Indicators ── */
+
+.envToggles {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.envToggle {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.envLabel {
+  opacity: 0.7;
+}
+
+.toggleOn {
+  background: rgba(57, 255, 20, 0.08);
+  color: var(--neon-green, #39ff14);
+  border: 1px solid rgba(57, 255, 20, 0.15);
+}
+
+.toggleOff {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  opacity: 0.5;
+}
+
+/* ── Detail View ── */
+
+.detailView {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detailToolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid rgba(176, 38, 255, 0.1);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.backBtn:hover {
+  color: var(--neon-cyan);
+  border-color: rgba(0, 255, 245, 0.3);
+}
+
+.detailTitle {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detailLabel {
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.detailValue {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.envStatusRow {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.envStatusBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  flex: 1;
+}
+
+.envStatusOn {
+  background: rgba(57, 255, 20, 0.05);
+  border: 1px solid rgba(57, 255, 20, 0.15);
+}
+
+.envStatusOff {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.envStatusLabel {
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.envStatusValue {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.envOn {
+  color: var(--neon-green, #39ff14);
+}
+
+.envOff {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+/* ── Empty state ── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 8px;
+}
+
+.emptyTitle {
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.emptyHint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.3;
+}

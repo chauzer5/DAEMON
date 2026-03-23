@@ -5,5 +5,7 @@ export { useIssueDetail } from "./useIssueDetail";
 export { useThreadReplies } from "./useThreadReplies";
 export { useWatchedThreads } from "./useWatchedThreads";
 export { useDatadogMonitors } from "./useDatadogMonitors";
+export { useGmailAlerts } from "./useGmailAlerts";
+export { useCommsFlags } from "./useCommsFlags";
 export { useCorrelationEngine } from "./useCorrelationEngine";
 export { useMonitorDetectors } from "./useMonitorDetectors";

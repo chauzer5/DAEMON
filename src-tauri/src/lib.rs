@@ -2,7 +2,7 @@ mod commands;
 mod models;
 mod services;
 
-use commands::{agent, datadog, gitlab, linear, settings, slack};
+use commands::{agent, datadog, gitlab, gmail, launchdarkly, linear, settings, slack};
 use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
 use tauri::Emitter;
 
@@ -110,6 +110,9 @@ pub fn run() {
             settings::test_linear_connection,
             settings::test_launchdarkly_connection,
             datadog::get_datadog_monitors,
+            gmail::check_gmail_alerts,
+            gmail::gmail_alert_to_slack,
+            launchdarkly::get_comms_flags,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

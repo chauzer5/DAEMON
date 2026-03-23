@@ -31,19 +31,27 @@ fn build_mcp_config(allowed_tools: &Option<Vec<String>>) -> String {
     }
 
     // Known MCP server configurations
-    let mut mcp_servers = Vec::new();
+    let mut mcp_servers: Vec<String> = Vec::new();
 
     if servers.contains("datadog-mcp") {
-        mcp_servers.push(r#""datadog-mcp":{"type":"http","url":"https://mcp.datadoghq.com/api/unstable/mcp-server/mcp"}"#);
+        mcp_servers.push(r#""datadog-mcp":{"type":"http","url":"https://mcp.datadoghq.com/api/unstable/mcp-server/mcp"}"#.into());
     }
     if servers.contains("linear-server") {
-        mcp_servers.push(r#""linear-server":{"command":"npx","args":["-y","linear-mcp-server"]}"#);
+        mcp_servers.push(r#""linear-server":{"command":"npx","args":["-y","linear-mcp-server"]}"#.into());
     }
     if servers.contains("figma") {
-        mcp_servers.push(r#""figma":{"type":"http","url":"https://mcp.figma.com/mcp"}"#);
+        mcp_servers.push(r#""figma":{"type":"http","url":"https://mcp.figma.com/mcp"}"#.into());
     }
     if servers.contains("playwright") {
-        mcp_servers.push(r#""playwright":{"command":"npx","args":["-y","@playwright/mcp@0.0.42"]}"#);
+        mcp_servers.push(r#""playwright":{"command":"npx","args":["-y","@playwright/mcp@0.0.42"]}"#.into());
+    }
+    if servers.contains("launchdarkly") {
+        if let Ok(Some(ld_key)) = crate::services::credentials::get_credential("launchdarkly_api_key") {
+            mcp_servers.push(format!(
+                r#""launchdarkly":{{"command":"npx","args":["-y","--package","@launchdarkly/mcp-server","--","mcp","start","--api-key","{}"]}}"#,
+                ld_key
+            ));
+        }
     }
 
     format!(r#"{{"mcpServers":{{{}}}}}"#, mcp_servers.join(","))

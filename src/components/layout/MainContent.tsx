@@ -9,6 +9,7 @@ import { TodosPanel } from "../../panels/todos/TodosPanel";
 import { ArchivePanel } from "../../panels/archive/ArchivePanel";
 import { BrowserPanel } from "../../panels/browser/BrowserPanel";
 import { DatadogPanel } from "../../panels/datadog/DatadogPanel";
+import { LaunchDarklyPanel } from "../../panels/launchdarkly/LaunchDarklyPanel";
 import styles from "./MainContent.module.css";
 
 const PANEL_COMPONENTS: Record<PanelId, ComponentType> = {
@@ -21,6 +22,7 @@ const PANEL_COMPONENTS: Record<PanelId, ComponentType> = {
   archive: ArchivePanel,
   browser: BrowserPanel,
   datadog: DatadogPanel,
+  launchdarkly: LaunchDarklyPanel,
 };
 
 export function MainContent() {
