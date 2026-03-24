@@ -113,3 +113,10 @@
   gap: 4px;
 }
 
+/* ── Drag overlay (floating ghost) ── */
+.dragOverlay {
+  opacity: 0.9;
+  cursor: grabbing;
+  filter: drop-shadow(0 4px 12px rgba(176, 38, 255, 0.3)) drop-shadow(0 0 8px rgba(0, 255, 245, 0.15));
+}
+

@@ -161,6 +161,63 @@ function CredentialRow({
   );
 }
 
+const UI_SCALE_KEY = "daemon_ui_scale";
+const SCALE_STEPS = [0.8, 0.85, 0.9, 0.95, 1, 1.05, 1.1, 1.15, 1.2, 1.3];
+const SCALE_LABELS: Record<number, string> = { 0.8: "XS", 0.9: "S", 1: "Default", 1.1: "L", 1.2: "XL", 1.3: "XXL" };
+
+function UIScaleSettings() {
+  const [scale, setScale] = useState(() => {
+    const raw = localStorage.getItem(UI_SCALE_KEY);
+    return raw ? parseFloat(raw) : 1;
+  });
+
+  const handleChange = (val: number) => {
+    setScale(val);
+    localStorage.setItem(UI_SCALE_KEY, String(val));
+    document.documentElement.style.setProperty("--ui-scale", String(val));
+  };
+
+  // Find closest step index for the slider
+  const stepIndex = SCALE_STEPS.reduce(
+    (best, s, i) => (Math.abs(s - scale) < Math.abs(SCALE_STEPS[best] - scale) ? i : best),
+    0,
+  );
+
+  return (
+    <div className={styles.credRow}>
+      <div className={styles.credHeader}>
+        <span className={styles.credLabel}>Interface scale</span>
+        <span className={styles.sliderValue}>
+          {SCALE_LABELS[scale] ?? `${Math.round(scale * 100)}%`}
+        </span>
+      </div>
+      <div className={styles.sliderRow} style={{ display: "flex" }}>
+        <span className={styles.sliderLabel}>Aa</span>
+        <input
+          type="range"
+          min={0}
+          max={SCALE_STEPS.length - 1}
+          value={stepIndex}
+          onChange={(e) => handleChange(SCALE_STEPS[parseInt(e.target.value, 10)])}
+          className={styles.slider}
+        />
+        <span className={styles.sliderLabel} style={{ fontSize: "14px", fontWeight: 700 }}>Aa</span>
+      </div>
+      {scale !== 1 && (
+        <motion.button
+          className={styles.cancelBtn}
+          onClick={() => handleChange(1)}
+          style={{ alignSelf: "flex-start", marginTop: 4, fontSize: 9, padding: "2px 8px" }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.92 }}
+        >
+          Reset to default
+        </motion.button>
+      )}
+    </div>
+  );
+}
+
 function BootSettings() {
   const [enabled, setEnabled] = useState(() => {
     return localStorage.getItem("daemon_boot_enabled") !== "false";
@@ -417,8 +474,19 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             <BootSettings />
           </Section>
 
-          {/* About */}
+          {/* UI Scale */}
           <Section index={4}>
+            <div className={styles.sectionTitle} style={{ marginTop: "24px" }}>
+              Display
+            </div>
+            <div className={styles.sectionDesc}>
+              Adjust the overall interface size
+            </div>
+            <UIScaleSettings />
+          </Section>
+
+          {/* About */}
+          <Section index={5}>
             <div className={styles.sectionTitle} style={{ marginTop: "24px" }}>
               About
             </div>

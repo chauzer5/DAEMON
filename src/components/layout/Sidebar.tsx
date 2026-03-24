@@ -11,6 +11,23 @@ import {
   Flag,
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragStartEvent,
+  type DragEndEvent,
+  DragOverlay,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { useLayoutStore, type PanelId } from "../../stores/layoutStore";
 import { useSlackSections } from "../../hooks";
@@ -20,21 +37,17 @@ import { usePersonaStore } from "../../stores/personaStore";
 import { getPersonaById } from "../../config/personas";
 import styles from "./Sidebar.module.css";
 
-const NAV_ITEMS: {
-  id: PanelId;
-  label: string;
-  icon: typeof MessageSquare;
-}[] = [
-  { id: "hub", label: "Hub", icon: LayoutDashboard },
-  { id: "slack", label: "Slack", icon: MessageSquare },
-  { id: "linear", label: "Linear", icon: LayoutList },
-  { id: "gitlab", label: "GitLab", icon: GitMerge },
-  { id: "agents", label: "Agents", icon: Bot },
-  { id: "datadog", label: "Monitors", icon: Activity },
-  { id: "launchdarkly", label: "Flags", icon: Flag },
-  { id: "browser", label: "Browse", icon: Globe },
-  { id: "archive", label: "Archive", icon: Archive },
-];
+const NAV_ITEMS: Partial<Record<PanelId, { label: string; icon: typeof MessageSquare }>> = {
+  hub: { label: "Hub", icon: LayoutDashboard },
+  slack: { label: "Slack", icon: MessageSquare },
+  linear: { label: "Linear", icon: LayoutList },
+  gitlab: { label: "GitLab", icon: GitMerge },
+  agents: { label: "Agents", icon: Bot },
+  datadog: { label: "Monitors", icon: Activity },
+  launchdarkly: { label: "Flags", icon: Flag },
+  browser: { label: "Browse", icon: Globe },
+  archive: { label: "Archive", icon: Archive },
+};
 
 /** Width of the proximity detection zone in pixels */
 const APPROACH_ZONE = 120;
@@ -64,9 +77,6 @@ const navContainerVariants: Variants = {
 };
 
 // Each nav item slides in from left with a slight spring bounce.
-// Cast to Variants to satisfy framer-motion v12's strict index signature —
-// the actual runtime shape is correct; the TS types are overly narrow for
-// transition objects nested inside variant states.
 const navItemVariants = {
   hidden: {
     opacity: 0,
@@ -92,13 +102,140 @@ const navItemVariants = {
   },
 } satisfies Record<string, object>;
 
+// ── Sortable Nav Item wrapper ──
+
+interface SortableNavItemProps {
+  id: PanelId;
+  index: number;
+  activePanel: PanelId;
+  isDragActive: boolean;
+  badge?: number;
+  secondaryBadge?: { count: number; label: string };
+  activity?: { running: boolean; avatar?: string; color?: string };
+  onClick: () => void;
+}
+
+function SortableNavItemWrapper({
+  id,
+  index,
+  activePanel,
+  isDragActive,
+  badge,
+  secondaryBadge,
+  activity,
+  onClick,
+}: SortableNavItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const navItem = NAV_ITEMS[id];
+  if (!navItem) return null;
+
+  const sortableStyle: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <motion.div
+      variants={navItemVariants as Variants}
+      // Disable Framer hover/tap animations while dragging
+      whileHover={isDragActive ? undefined : { x: 4, transition: { type: "spring" as const, stiffness: 500, damping: 20 } }}
+      whileTap={isDragActive ? undefined : {
+        scale: 0.96,
+        x: 1,
+        transition: { type: "spring" as const, stiffness: 700, damping: 20 },
+      }}
+      custom={index}
+      ref={setNodeRef}
+      style={sortableStyle}
+      {...attributes}
+      {...listeners}
+    >
+      <SidebarNavItem
+        icon={navItem.icon}
+        label={navItem.label}
+        badge={badge}
+        secondaryBadge={secondaryBadge}
+        active={activePanel === id}
+        collapsed={false}
+        activity={activity}
+        onClick={onClick}
+      />
+    </motion.div>
+  );
+}
+
+// ── Static overlay item (rendered during drag) ──
+
+function DragOverlayItem({ id, activePanel, badge, secondaryBadge, activity }: {
+  id: PanelId;
+  activePanel: PanelId;
+  badge?: number;
+  secondaryBadge?: { count: number; label: string };
+  activity?: { running: boolean; avatar?: string; color?: string };
+}) {
+  const navItem = NAV_ITEMS[id];
+  if (!navItem) return null;
+
+  return (
+    <div className={styles.dragOverlay}>
+      <SidebarNavItem
+        icon={navItem.icon}
+        label={navItem.label}
+        badge={badge}
+        secondaryBadge={secondaryBadge}
+        active={activePanel === id}
+        collapsed={false}
+        activity={activity}
+        onClick={() => {}}
+      />
+    </div>
+  );
+}
+
 export function Sidebar() {
   const { activePanel, setActivePanel } = useLayoutStore();
   const booting = useLayoutStore((s) => s.booting);
+  const panelOrder = useLayoutStore((s) => s.panelOrder);
+  const reorderPanels = useLayoutStore((s) => s.reorderPanels);
 
   const [revealed, setRevealed] = useState(false);
   const [proximity, setProximity] = useState(0); // 0 = far, 1 = at edge
   const hideTimer = useRef<ReturnType<typeof setTimeout>>();
+  const [dragActiveId, setDragActiveId] = useState<PanelId | null>(null);
+
+  // Drag sensors — require 8px movement to distinguish from click
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+  );
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setDragActiveId(event.active.id as PanelId);
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    setDragActiveId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = panelOrder.indexOf(active.id as PanelId);
+    const newIndex = panelOrder.indexOf(over.id as PanelId);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      reorderPanels(arrayMove(panelOrder, oldIndex, newIndex));
+    }
+  }, [panelOrder, reorderPanels]);
+
+  const handleDragCancel = useCallback(() => {
+    setDragActiveId(null);
+  }, []);
 
   // Track cursor proximity to left edge globally
   useEffect(() => {
@@ -125,11 +262,13 @@ export function Sidebar() {
   }, [booting]);
 
   const startHide = useCallback(() => {
+    // Don't auto-hide while dragging
+    if (dragActiveId) return;
     clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => {
       setRevealed(false);
     }, 400);
-  }, []);
+  }, [dragActiveId]);
 
   const cancelHide = useCallback(() => {
     clearTimeout(hideTimer.current);
@@ -231,8 +370,6 @@ export function Sidebar() {
   };
 
   // Compute sidebar width for the collapsed x offset
-  // We use CSS custom property as the authoritative width, but for Framer we
-  // need a concrete value. Pull it from the computed style on first render.
   const sidebarRef = useRef<HTMLElement>(null);
 
   const getCollapsedX = () => {
@@ -240,14 +377,12 @@ export function Sidebar() {
       const w = sidebarRef.current.offsetWidth;
       return -(w + 3);
     }
-    // Fallback: enough to ensure it's off-screen
     return -260;
   };
 
   const baseClass = styles.sidebar;
 
-  // Pulse edge: dynamic intensity based on proximity (when approaching)
-  // or softened (when sidebar is fully revealed)
+  // Pulse edge: dynamic intensity based on proximity
   const rgbColor = "0, 255, 245";
   const edgeIntensity = revealed ? 0.15 : proximity;
   const edgeStyle = {
@@ -257,11 +392,8 @@ export function Sidebar() {
     "--edge-glow": `0 0 ${edgeIntensity * 30}px ${edgeIntensity * 12}px rgba(${rgbColor}, ${edgeIntensity * 0.5})`,
   } as React.CSSProperties;
 
-  // Box shadow is driven by Framer animate prop (not CSS class) so it can
-  // vary between collapsed (none) and revealed (full purple/cyan glow).
   const revealedBoxShadow = "4px 0 30px rgba(0, 0, 0, 0.7), 2px 0 15px rgba(176, 38, 255, 0.25), 0 0 60px rgba(0, 255, 245, 0.08)";
 
-  // Don't render anything during boot — hot zone z-index is above boot overlay
   if (booting) return null;
 
   return (
@@ -278,64 +410,69 @@ export function Sidebar() {
       <motion.aside
         ref={sidebarRef}
         className={baseClass}
-        // Drive x directly so Framer owns the translation (removes CSS
-        // transform classes for revealed/collapsed).
         animate={{
           x: revealed ? 0 : getCollapsedX(),
           boxShadow: revealed ? revealedBoxShadow : "none",
           pointerEvents: revealed ? "auto" : "none",
         }}
         transition={sidebarTransition}
-        // Ensure the element is never visually hidden — pointer-events are
-        // toggled via animate above
         style={{ pointerEvents: revealed ? "auto" : "none" }}
         onMouseEnter={cancelHide}
         onMouseLeave={startHide}
       >
-        <AnimatePresence mode="wait">
-          {revealed && (
-            <motion.nav
-              key="nav"
-              className={styles.nav}
-              variants={navContainerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              {NAV_ITEMS.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  variants={navItemVariants as Variants}
-                  // Cyberpunk whileHover: slide right, glow border flare
-                  whileHover={{ x: 4, transition: { type: "spring" as const, stiffness: 500, damping: 20 } }}
-                  whileTap={{
-                    scale: 0.96,
-                    x: 1,
-                    transition: { type: "spring" as const, stiffness: 700, damping: 20 },
-                  }}
-                  // Slight delay cascade so items feel like they're loading in
-                  custom={index}
-                >
-                  <SidebarNavItem
-                    icon={item.icon}
-                    label={item.label}
-                    badge={getBadge(item.id)}
-                    secondaryBadge={getSecondaryBadge(item.id)}
-                    active={activePanel === item.id}
-                    collapsed={false}
-                    activity={item.id === "agents" ? agentActivity : undefined}
-                    onClick={() => {
-                      setActivePanel(item.id);
-                      if (item.id === "agents" && unseenCompletions > 0) {
-                        clearUnseenCompletions();
-                      }
-                    }}
-                  />
-                </motion.div>
-              ))}
-            </motion.nav>
-          )}
-        </AnimatePresence>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <AnimatePresence mode="wait">
+            {revealed && (
+              <motion.nav
+                key="nav"
+                className={styles.nav}
+                variants={navContainerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <SortableContext items={panelOrder} strategy={verticalListSortingStrategy}>
+                  {panelOrder.map((id, index) => (
+                    <SortableNavItemWrapper
+                      key={id}
+                      id={id}
+                      index={index}
+                      activePanel={activePanel}
+                      isDragActive={!!dragActiveId}
+                      badge={getBadge(id)}
+                      secondaryBadge={getSecondaryBadge(id)}
+                      activity={id === "agents" ? agentActivity : undefined}
+                      onClick={() => {
+                        setActivePanel(id);
+                        if (id === "agents" && unseenCompletions > 0) {
+                          clearUnseenCompletions();
+                        }
+                      }}
+                    />
+                  ))}
+                </SortableContext>
+              </motion.nav>
+            )}
+          </AnimatePresence>
+
+          <DragOverlay dropAnimation={null}>
+            {dragActiveId && (
+              <DragOverlayItem
+                id={dragActiveId}
+                activePanel={activePanel}
+                badge={getBadge(dragActiveId)}
+                secondaryBadge={getSecondaryBadge(dragActiveId)}
+                activity={dragActiveId === "agents" ? agentActivity : undefined}
+              />
+            )}
+          </DragOverlay>
+        </DndContext>
 
         {/* Pulse edge — attached to sidebar's right edge, moves with it */}
         <div

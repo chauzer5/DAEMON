@@ -87,6 +87,9 @@
   --sidebar-width: 240px;
   --sidebar-width-collapsed: 56px;
 
+  /* ── UI Scale (set by JS from localStorage) ── */
+  --ui-scale: 1;
+
   /* ── Lava lamp background ── */
   --lava-blob-1: rgba(0, 255, 245, 0.3);
   --lava-blob-2: rgba(255, 44, 241, 0.3);

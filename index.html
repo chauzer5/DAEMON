@@ -8,6 +8,13 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Apply saved UI scale before React renders to avoid flash
+      try {
+        var s = localStorage.getItem("daemon_ui_scale");
+        if (s) document.documentElement.style.setProperty("--ui-scale", s);
+      } catch(e) {}
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -28,6 +28,11 @@ body,
   user-select: none;
 }
 
+/* ── UI Scale — zoom all content uniformly ── */
+#root {
+  zoom: var(--ui-scale, 1);
+}
+
 /* ── Pulsing border glow around the entire viewport ── */
 #root {
   animation: viewport-border-glow 6s ease-in-out infinite;

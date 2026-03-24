@@ -5,6 +5,7 @@ import {
   type CorrelationEntity,
 } from "../stores/correlationStore";
 import { useFocusStore } from "../stores/focusStore";
+import { extractTicketIds, extractMRRefs } from "../utils/signals";
 import type {
   DatadogMonitor,
   EnrichedMergeRequest,
@@ -12,37 +13,11 @@ import type {
   LinearIssue,
 } from "../types/models";
 
-// ── Regex patterns for signal extraction ──
-
-/** Matches ticket IDs like SUR-940, ENG-512, PRD-123 (case-insensitive) */
-const TICKET_ID_RE = /\b([A-Z]{2,6}-\d{1,6})\b/gi;
-
-/** Matches MR references like !142, !4521 */
-const MR_REF_RE = /!(\d+)\b/g;
-
 // ── Signal pair helper ──
 
 interface Signal {
   a: string;
   b: string;
-}
-
-/** Extract all ticket IDs from text, normalized to uppercase */
-function extractTicketIds(text: string): string[] {
-  const ids = new Set<string>();
-  for (const m of text.matchAll(TICKET_ID_RE)) {
-    ids.add(m[1].toUpperCase());
-  }
-  return [...ids];
-}
-
-/** Extract all MR IID references from text */
-function extractMRRefs(text: string): string[] {
-  const ids = new Set<string>();
-  for (const m of text.matchAll(MR_REF_RE)) {
-    ids.add(m[1]);
-  }
-  return [...ids];
 }
 
 // ── GitLab signal extraction ──

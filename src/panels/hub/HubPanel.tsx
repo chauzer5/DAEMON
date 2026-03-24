@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -47,6 +47,7 @@ import {
   Loader,
   Copy,
   Activity,
+  Radar,
 } from "lucide-react";
 import { Panel } from "../../components/layout/Panel";
 import { useSlackSections } from "../../hooks/useSlackMentions";
@@ -60,7 +61,9 @@ import type { FocusItem, FocusSource, FocusLink, FocusDispatch } from "../../sto
 import { usePersonaStore } from "../../stores/personaStore";
 import { useChatStore } from "../../stores/chatStore";
 import { useDismissedUrgentStore } from "../../stores/dismissedUrgentStore";
+import { useCorrelateItem, type CorrelationResult } from "../../hooks/useCorrelateItem";
 import { DEFAULT_PERSONAS } from "../../config/personas";
+import { relativeTime } from "../../utils/time";
 import styles from "./HubPanel.module.css";
 
 // ── Types ────────────────────────────────────────────────────
@@ -109,15 +112,6 @@ const AGENT_SUGGESTIONS: { id: string; label: string }[] = [
 ];
 
 // ── Helpers ──────────────────────────────────────────────────
-function relativeTime(dateStr: string): string {
-  const diffMs = Date.now() - new Date(dateStr).getTime();
-  if (diffMs < 60_000) return "just now";
-  const mins = Math.floor(diffMs / 60_000);
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
 
 function feedItemToLink(item: FeedItem): Omit<FocusLink, "id"> {
   return {
@@ -377,6 +371,18 @@ function FocusDetailView({ item }: { item: FocusItem }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(item.title);
   const [showAgents, setShowAgents] = useState(false);
+  const [correlationResult, setCorrelationResult] = useState<CorrelationResult | null>(null);
+  const correlateItem = useCorrelateItem();
+  const correlationTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => () => clearTimeout(correlationTimer.current), []);
+
+  const handleCorrelate = () => {
+    const result = correlateItem(item);
+    setCorrelationResult(result);
+    clearTimeout(correlationTimer.current);
+    correlationTimer.current = setTimeout(() => setCorrelationResult(null), 4000);
+  };
 
   const doneCount = item.tasks.filter((t) => t.done).length;
   const latestDispatch = item.dispatches[0];
@@ -399,6 +405,11 @@ function FocusDetailView({ item }: { item: FocusItem }) {
           <span>Focus</span>
         </button>
         <div className={styles.detailActions}>
+          {/* Correlate scan */}
+          <button className={styles.correlateBtn} onClick={handleCorrelate} title="Scan all sources for related items">
+            <Radar size={12} />
+            <span>Correlate</span>
+          </button>
           {/* Agent dispatch */}
           <div className={styles.agentMenu}>
             {latestDispatch && latestPersona ? (
@@ -447,6 +458,29 @@ function FocusDetailView({ item }: { item: FocusItem }) {
           </button>
         </div>
       </div>
+
+      {/* Correlation result feedback */}
+      <AnimatePresence>
+        {correlationResult && (
+          <motion.div
+            className={`${styles.correlationToast} ${correlationResult.added > 0 ? styles.correlationToastSuccess : styles.correlationToastEmpty}`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Radar size={11} />
+            {correlationResult.added > 0 ? (
+              <span>Found {correlationResult.added} new link{correlationResult.added !== 1 ? "s" : ""}: {correlationResult.details.join(", ")}</span>
+            ) : (
+              <span>No new correlations found</span>
+            )}
+            <button className={styles.correlationToastClose} onClick={() => setCorrelationResult(null)}>
+              <X size={9} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className={styles.detailBody}>
         {/* Title */}

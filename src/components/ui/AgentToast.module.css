@@ -116,6 +116,140 @@
   letter-spacing: 0.2px;
 }
 
+/* ── Context toggle ── */
+
+.contextToggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 0;
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.12s;
+}
+
+.contextToggle:hover {
+  color: var(--text-secondary);
+}
+
+.contextChevron {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.contextToggleOpen .contextChevron {
+  transform: rotate(180deg);
+}
+
+.contextRelatedCount {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(176, 38, 255, 0.1);
+  color: var(--neon-purple);
+  font-size: 8px;
+}
+
+/* ── Context panel (expandable) ── */
+
+.contextPanel {
+  overflow: hidden;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 2px;
+  padding-top: 6px;
+}
+
+.contextFields {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.contextFieldRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.contextFieldLabel {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  min-width: 64px;
+}
+
+.contextFieldValue {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Accent colors for field values */
+.accentCyan { color: var(--neon-cyan); }
+.accentGreen { color: var(--neon-green); }
+.accentRed { color: var(--neon-red, #ff3366); }
+.accentMagenta { color: var(--neon-magenta); }
+.accentMuted { color: var(--text-muted); }
+
+/* ── Related items ── */
+
+.contextRelated {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.contextRelatedHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--neon-purple);
+  margin-bottom: 4px;
+  opacity: 0.7;
+}
+
+.relatedRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.relatedIcon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.relatedLabel {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── Action buttons ── */
 
 .actions {

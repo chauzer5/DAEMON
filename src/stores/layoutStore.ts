@@ -2,6 +2,11 @@ import { create } from "zustand";
 
 export type PanelId = "hub" | "slack" | "gitlab" | "agents" | "linear" | "todos" | "archive" | "browser" | "datadog" | "launchdarkly";
 
+/** Default sidebar order — also the canonical list of sidebar-visible panels */
+export const DEFAULT_PANEL_ORDER: PanelId[] = [
+  "hub", "slack", "linear", "gitlab", "agents", "datadog", "launchdarkly", "browser", "archive",
+];
+
 export interface PendingThread {
   channelId: string;
   threadTs: string;
@@ -21,6 +26,9 @@ interface LayoutState {
   pendingLinearId: string | null;
   pendingMonitorId: number | null;
 
+  // Sidebar panel ordering (persisted to localStorage)
+  panelOrder: PanelId[];
+
   // Navigation history
   historyBack: PanelId[];
   historyForward: PanelId[];
@@ -28,6 +36,7 @@ interface LayoutState {
   canGoForward: boolean;
 
   setActivePanel: (id: PanelId) => void;
+  reorderPanels: (order: PanelId[]) => void;
   setBooting: (booting: boolean) => void;
   openSlackThread: (thread: PendingThread) => void;
   clearPendingThread: () => void;
@@ -42,6 +51,25 @@ interface LayoutState {
   goForward: () => void;
 }
 
+// Restore persisted sidebar order (or use default)
+function loadPanelOrder(): PanelId[] {
+  try {
+    const raw = localStorage.getItem("daemon-panel-order");
+    if (raw) {
+      const parsed = JSON.parse(raw) as PanelId[];
+      // Ensure all panels are present (handles newly added panels)
+      const known = new Set(parsed);
+      const merged = [...parsed];
+      for (const id of DEFAULT_PANEL_ORDER) {
+        if (!known.has(id)) merged.push(id);
+      }
+      // Remove panels that no longer exist
+      return merged.filter((id) => DEFAULT_PANEL_ORDER.includes(id));
+    }
+  } catch { /* use default */ }
+  return [...DEFAULT_PANEL_ORDER];
+}
+
 export const useLayoutStore = create<LayoutState>((set, get) => ({
   activePanel: "hub",
   sidebarCollapsed: false,
@@ -50,12 +78,18 @@ export const useLayoutStore = create<LayoutState>((set, get) => ({
   pendingMR: null,
   pendingMonitorId: null,
   pendingLinearId: null,
+  panelOrder: loadPanelOrder(),
   historyBack: [],
   historyForward: [],
   canGoBack: false,
   canGoForward: false,
 
   setBooting: (booting) => set({ booting }),
+
+  reorderPanels: (order) => {
+    set({ panelOrder: order });
+    localStorage.setItem("daemon-panel-order", JSON.stringify(order));
+  },
 
   setActivePanel: (id) => {
     const { activePanel, historyBack } = get();
