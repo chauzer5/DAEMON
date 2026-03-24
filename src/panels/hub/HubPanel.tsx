@@ -381,7 +381,7 @@ function FocusDetailView({ item }: { item: FocusItem }) {
     const result = correlateItem(item);
     setCorrelationResult(result);
     clearTimeout(correlationTimer.current);
-    correlationTimer.current = setTimeout(() => setCorrelationResult(null), 4000);
+    correlationTimer.current = setTimeout(() => setCorrelationResult(null), 6000);
   };
 
   const doneCount = item.tasks.filter((t) => t.done).length;
@@ -463,7 +463,7 @@ function FocusDetailView({ item }: { item: FocusItem }) {
       <AnimatePresence>
         {correlationResult && (
           <motion.div
-            className={`${styles.correlationToast} ${correlationResult.added > 0 ? styles.correlationToastSuccess : styles.correlationToastEmpty}`}
+            className={`${styles.correlationToast} ${correlationResult.added > 0 ? styles.correlationToastSuccess : correlationResult.total > 0 ? styles.correlationToastPartial : styles.correlationToastEmpty}`}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -471,9 +471,11 @@ function FocusDetailView({ item }: { item: FocusItem }) {
           >
             <Radar size={11} />
             {correlationResult.added > 0 ? (
-              <span>Found {correlationResult.added} new link{correlationResult.added !== 1 ? "s" : ""}: {correlationResult.details.join(", ")}</span>
+              <span>Linked {correlationResult.added} item{correlationResult.added !== 1 ? "s" : ""}{correlationResult.total > correlationResult.added ? ` · ${correlationResult.total - correlationResult.added} weaker` : ""}</span>
+            ) : correlationResult.total > 0 ? (
+              <span>{correlationResult.total} possible match{correlationResult.total !== 1 ? "es" : ""} (not strong enough to auto-link)</span>
             ) : (
-              <span>No new correlations found</span>
+              <span>No correlations found</span>
             )}
             <button className={styles.correlationToastClose} onClick={() => setCorrelationResult(null)}>
               <X size={9} />

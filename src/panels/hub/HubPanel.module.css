@@ -201,6 +201,7 @@
 /* ── Correlation result toast ── */
 .correlationToast { display: flex; align-items: center; gap: 6px; padding: 6px 10px; margin: 0 8px; font-family: var(--font-mono); font-size: 10px; border-radius: var(--radius-sm); overflow: hidden; }
 .correlationToastSuccess { color: var(--neon-green); background: rgba(57,255,20,0.06); border: 1px solid rgba(57,255,20,0.2); }
+.correlationToastPartial { color: var(--neon-yellow); background: rgba(255,230,0,0.06); border: 1px solid rgba(255,230,0,0.2); }
 .correlationToastEmpty { color: var(--text-muted); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
 .correlationToast span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .correlationToastClose { display: flex; align-items: center; justify-content: center; width: 16px; height: 16px; background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.5; flex-shrink: 0; transition: opacity 0.12s; }
