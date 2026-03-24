@@ -16,6 +16,48 @@ export interface CorrelationResult {
   details: string[];
 }
 
+// ── Keyword extraction ──
+
+/** Common stop words to skip during keyword extraction */
+const STOP_WORDS = new Set([
+  "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
+  "of", "with", "by", "from", "is", "it", "as", "be", "was", "are",
+  "this", "that", "if", "not", "out", "up", "do", "my", "we", "so",
+  "can", "has", "have", "had", "get", "got", "see", "just", "about",
+  "how", "what", "when", "who", "why", "all", "its", "been", "will",
+  "going", "figure", "check", "look", "into", "some", "any", "able",
+  "down", "they", "them", "their", "our", "new", "old",
+]);
+
+/**
+ * Extract meaningful keywords from text for fuzzy matching.
+ * Returns lowercased tokens of 3+ chars that aren't stop words.
+ * Also extracts standalone numbers of 3+ digits (like error codes).
+ */
+function extractKeywords(text: string): string[] {
+  const words = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
+  return [...new Set(words)];
+}
+
+/**
+ * Check if a target string contains enough keywords to be a match.
+ * Requires at least `threshold` keywords to match.
+ */
+function keywordMatch(keywords: string[], target: string, threshold: number): boolean {
+  if (keywords.length === 0) return false;
+  const lower = target.toLowerCase();
+  let hits = 0;
+  for (const kw of keywords) {
+    if (lower.includes(kw)) hits++;
+    if (hits >= threshold) return true;
+  }
+  return false;
+}
+
 /**
  * Returns a callback that scans all loaded data sources for a given focus item
  * and auto-attaches any discovered links that aren't already present.
@@ -28,7 +70,7 @@ export function useCorrelateItem() {
       const result: CorrelationResult = { added: 0, details: [] };
       const addLink = useFocusStore.getState().addLink;
 
-      // ── Collect signals from the focus item ──
+      // ── Collect structured signals from the focus item ──
       const ticketIds = new Set<string>();
       const mrIids = new Set<string>();
 
@@ -48,7 +90,13 @@ export function useCorrelateItem() {
         if (link.source === "gitlab" && link.sourceId) mrIids.add(link.sourceId);
       }
 
-      if (ticketIds.size === 0 && mrIids.size === 0) return result;
+      const hasStructuredSignals = ticketIds.size > 0 || mrIids.size > 0;
+
+      // ── Extract keywords for fuzzy matching (always, as a supplement) ──
+      const allText = [item.title, ...item.notes.map((n) => n.text), ...item.links.map((l) => l.label)].join(" ");
+      const keywords = extractKeywords(allText);
+      // Require at least 2 keyword hits for fuzzy matches (avoids false positives)
+      const fuzzyThreshold = Math.min(2, Math.max(1, Math.ceil(keywords.length * 0.3)));
 
       // Helper to check if a link is already attached
       const existingLinks = new Set(
@@ -89,10 +137,17 @@ export function useCorrelateItem() {
           const branchTicket = branchMatch ? branchMatch[1].toUpperCase() : null;
           const titleTickets = extractTicketIds(mr.title);
 
-          const matched = (branchTicket && ticketIds.has(branchTicket))
-            || titleTickets.some((t) => ticketIds.has(t));
+          const structuredMatch = hasStructuredSignals && (
+            (branchTicket && ticketIds.has(branchTicket))
+            || titleTickets.some((t) => ticketIds.has(t))
+          );
 
-          if (matched) {
+          // Keyword fallback: match against MR title + branch
+          const fuzzyMatch = !structuredMatch
+            && keywords.length > 0
+            && keywordMatch(keywords, `${mr.title} ${mr.source_branch}`, fuzzyThreshold);
+
+          if (structuredMatch || fuzzyMatch) {
             tryAdd("gitlab", mrIid, {
               source: "gitlab",
               label: `!${mr.iid}: ${mr.title}`,
@@ -111,7 +166,14 @@ export function useCorrelateItem() {
       const issues = queryClient.getQueryData<LinearIssue[]>(["linear", "issues"]);
       if (issues) {
         for (const issue of issues) {
-          if (ticketIds.has(issue.identifier)) {
+          const structuredMatch = ticketIds.has(issue.identifier);
+
+          // Keyword fallback: match against issue title
+          const fuzzyMatch = !structuredMatch
+            && keywords.length > 0
+            && keywordMatch(keywords, issue.title, fuzzyThreshold);
+
+          if (structuredMatch || fuzzyMatch) {
             tryAdd("linear", issue.identifier, {
               source: "linear",
               label: `${issue.identifier}: ${issue.title}`,
@@ -133,10 +195,17 @@ export function useCorrelateItem() {
             const msgTickets = extractTicketIds(msg.message);
             const msgMRs = extractMRRefs(msg.message);
 
-            const matched = msgTickets.some((t) => ticketIds.has(t))
-              || msgMRs.some((iid) => mrIids.has(iid));
+            const structuredMatch = hasStructuredSignals && (
+              msgTickets.some((t) => ticketIds.has(t))
+              || msgMRs.some((iid) => mrIids.has(iid))
+            );
 
-            if (matched) {
+            // Keyword fallback: match against message text
+            const fuzzyMatch = !structuredMatch
+              && keywords.length > 0
+              && keywordMatch(keywords, msg.message, fuzzyThreshold);
+
+            if (structuredMatch || fuzzyMatch) {
               const slackKey = msg.raw_ts;
               tryAdd("slack", slackKey, {
                 source: "slack",
@@ -159,7 +228,19 @@ export function useCorrelateItem() {
       if (monitors) {
         for (const monitor of monitors) {
           const monitorTickets = extractTicketIds(monitor.name);
-          if (monitorTickets.some((t) => ticketIds.has(t))) {
+          const structuredMatch = hasStructuredSignals
+            && monitorTickets.some((t) => ticketIds.has(t));
+
+          // Keyword fallback: match against monitor name + message + tags
+          const fuzzyMatch = !structuredMatch
+            && keywords.length > 0
+            && keywordMatch(
+              keywords,
+              `${monitor.name} ${monitor.message} ${monitor.tags.join(" ")}`,
+              fuzzyThreshold,
+            );
+
+          if (structuredMatch || fuzzyMatch) {
             const monId = String(monitor.id);
             tryAdd("datadog", monId, {
               source: "datadog",
